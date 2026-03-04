@@ -171,8 +171,15 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .app-header {
@@ -189,6 +196,7 @@ body {
   margin: 0 auto;
   width: 100%;
   padding: 2rem;
+  overflow-y: auto;
 }
 
 .logo {

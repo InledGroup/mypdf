@@ -309,7 +309,7 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
 .workspace { display: flex; flex-direction: column; height: 100%; background: #f8fafc; }
 .workspace-layout { flex: 1; display: flex; overflow: hidden; }
 .workspace-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-.empty-state { height: 100%; display: flex; align-items: center; justify-content: center; }
+.empty-state { height: 100%; display: flex; align-items: center; justify-content: center; padding: 2rem; overflow-y: auto; }
 .upload-card { background: white; padding: 3rem; border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
 .upload-area { cursor: pointer; display: flex; flex-direction: column; align-items: center; }
 .icon-circle { width: 70px; height: 70px; background: #eff6ff; color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
