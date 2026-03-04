@@ -23,6 +23,8 @@ const loadedFiles = ref<LoadedFile[]>([])
 const pages = ref<PageInfo[]>([])
 const isLoading = ref(false)
 const viewMode = ref<ViewMode>('mosaic')
+const loadingCurrentPage = ref(0)
+const loadingTotalPages = ref(0)
 
 // OCR Specific
 const ocrEnabled = ref(false)
@@ -86,7 +88,19 @@ const onFileChange = async (e: Event) => {
   const target = e.target as HTMLInputElement
   if (target.files && target.files.length > 0) {
     isLoading.value = true
-    for (const file of Array.from(target.files)) {
+    loadingCurrentPage.value = 0
+    loadingTotalPages.value = 0
+    
+    const files = Array.from(target.files)
+    // Pre-calculate total pages
+    for (const file of files) {
+      const arrayBuffer = await file.arrayBuffer()
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) })
+      const pdfDoc = await loadingTask.promise
+      loadingTotalPages.value += pdfDoc.numPages
+    }
+
+    for (const file of files) {
       const arrayBuffer = await file.arrayBuffer()
       loadedFiles.value.push({ name: file.name, arrayBuffer })
       await loadPagesFromFile(arrayBuffer, loadedFiles.value.length - 1)
@@ -118,6 +132,7 @@ const loadPagesFromFile = async (buffer: ArrayBuffer, fileIndex: number) => {
       group: undefined,
       crop: { x: 0, y: 0, width: 100, height: 100 }
     })
+    loadingCurrentPage.value++
   }
 }
 
@@ -188,6 +203,20 @@ const downloadPdf = async () => {
         if (!cp) continue
         const { width, height } = cp.getSize()
         
+        // Final orientation calculation
+        const originalRotation = cp.getRotation().angle
+        const totalRotation = (originalRotation + (pInfo.rotation || 0)) % 360
+        const isRotated = totalRotation % 180 !== 0
+        const vWidth = isRotated ? height : width
+        const vHeight = isRotated ? width : height
+
+        const mapCoords = (vx: number, vy: number) => {
+          if (totalRotation === 90) return { x: width - vy, y: vx }
+          if (totalRotation === 180) return { x: width - vx, y: height - vy }
+          if (totalRotation === 270) return { x: vy, y: height - vx }
+          return { x: vx, y: vy }
+        }
+
         // Apply Crop
         if (pInfo.crop && (pInfo.crop.width < 100 || pInfo.crop.height < 100 || pInfo.crop.x > 0 || pInfo.crop.y > 0)) {
           const cx = (pInfo.crop.x / 100) * width, cy = (pInfo.crop.y / 100) * height
@@ -196,33 +225,49 @@ const downloadPdf = async () => {
         }
 
         if (withWatermark) {
-          const draw = (x: number, y: number) => {
+          const nr = degrees(watermarkRotation.value + totalRotation)
+          const draw = (vx: number, vy: number) => {
+            const { x, y } = mapCoords(vx, vy)
+            const finalSize = watermarkRepeat.value ? watermarkSize.value / 2.5 : watermarkSize.value
             if (watermarkType.value === 'text') {
               const c = hexToRgb(watermarkColor.value)
-              cp.drawText(watermarkText.value, { x, y, size: watermarkSize.value, font, opacity: watermarkOpacity.value, rotate: degrees(watermarkRotation.value), color: rgb(c.r, c.g, c.b) })
+              cp.drawText(watermarkText.value, { x, y, size: finalSize, font, opacity: watermarkOpacity.value, rotate: nr, color: rgb(c.r, c.g, c.b) })
             } else if (wImg) {
-              const d = wImg.scale(watermarkSize.value / 100)
-              cp.drawImage(wImg, { x, y, width: d.width, height: d.height, opacity: watermarkOpacity.value, rotate: degrees(watermarkRotation.value) })
+              const d = wImg.scale(finalSize / 100)
+              cp.drawImage(wImg, { x, y, width: d.width, height: d.height, opacity: watermarkOpacity.value, rotate: nr })
             }
           }
-          if (watermarkRepeat.value) { for (let tx=0; tx<width; tx+=150) for (let ty=0; ty<height; ty+=150) draw(tx, ty) }
-          else {
+          if (watermarkRepeat.value) { 
+            const cols = 3, rows = 4
+            for (let i = 0; i < cols; i++) {
+              for (let j = 0; j < rows; j++) {
+                const vx = (i + 0.5) * (vWidth / cols) - (watermarkSize.value * 1)
+                const vy = (j + 0.5) * (vHeight / rows)
+                draw(vx, vy)
+              }
+            }
+          } else {
             let tx=0, ty=0, [v,h] = watermarkPosition.value.split('-')
-            tx = h==='left'?50 : h==='right'?width-150 : width/2-50
-            ty = v==='top'?height-100 : v==='bottom'?50 : height/2-50
+            tx = h==='left'?50 : h==='right'?vWidth-200 : vWidth/2-100
+            ty = v==='top'?vHeight-100 : v==='bottom'?50 : vHeight/2-50
             draw(tx, ty)
           }
         }
         if (withNumbering) {
           const txt = `${gIdx}`, fs = 12, tw = font.widthOfTextAtSize(txt, fs), pad = 6, bw = tw+pad*2, bh = fs+pad*2
-          let nx=0, ny=0, npos = numberingPosition.value
-          nx = npos.includes('left')?20 : npos.includes('right')?width-bw-20 : (width-bw)/2
-          ny = npos.includes('top')?height-bh-20 : 20
+          let vnx=0, vny=0, npos = numberingPosition.value
+          vnx = npos.includes('left')?20 : npos.includes('right')?vWidth-bw-20 : (vWidth-bw)/2
+          vny = npos.includes('top')?vHeight-bh-20 : 20
+          
+          const { x: nx, y: ny } = mapCoords(vnx, vny)
+          const { x: tx, y: ty } = mapCoords(vnx + pad, vny + pad + 2)
+          const nr = degrees(totalRotation)
           const bc = hexToRgb(numberingBgColor.value), tc = hexToRgb(numberingTextColor.value)
-          cp.drawRectangle({ x: nx, y: ny, width: bw, height: bh, color: rgb(bc.r,bc.g,bc.b) })
-          cp.drawText(txt, { x: nx+pad, y: ny+pad+2, size: fs, font, color: rgb(tc.r,tc.g,tc.b) })
+          
+          cp.drawRectangle({ x: nx, y: ny, width: bw, height: bh, color: rgb(bc.r,bc.g,bc.b), rotate: nr })
+          cp.drawText(txt, { x: tx, y: ty, size: fs, font, color: rgb(tc.r,tc.g,tc.b), rotate: nr })
         }
-        if (pInfo.rotation !== 0) cp.setRotation(degrees(pInfo.rotation))
+        cp.setRotation(degrees(totalRotation))
         if (withOcr && tWorker) {
           const res = await tWorker.recognize(pInfo.dataUrl), d = res.data
           if (d?.words) for (const w of d.words) {
@@ -301,7 +346,20 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
         @reset="reset"
       />
     </div>
-    <div v-if="isLoading" class="loader-overlay"><div class="loader"></div><p v-if="isOcrRunning">OCR Recognition: Page {{ ocrCurrentPage }} of {{ ocrTotalPages }} ({{ ocrProgress }}%)</p><p v-else>Processing PDF...</p></div>
+    <div v-if="isLoading" class="loader-overlay">
+      <div class="loader-content">
+        <div class="loader"></div>
+        <div v-if="isOcrRunning" class="progress-info">
+          <p>OCR Recognition: Page {{ ocrCurrentPage }} of {{ ocrTotalPages }}</p>
+          <div class="progress-container"><div class="progress-bar" :style="{ width: ocrProgress + '%' }"></div></div>
+        </div>
+        <div v-else-if="loadingTotalPages > 0" class="progress-info">
+          <p>Cargando páginas: {{ loadingCurrentPage }} de {{ loadingTotalPages }}</p>
+          <div class="progress-container"><div class="progress-bar" :style="{ width: (loadingCurrentPage / loadingTotalPages * 100) + '%' }"></div></div>
+        </div>
+        <p v-else>Processing PDF...</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -314,7 +372,11 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
 .upload-area { cursor: pointer; display: flex; flex-direction: column; align-items: center; }
 .icon-circle { width: 70px; height: 70px; background: #eff6ff; color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
 .btn-secondary { background: white; color: #1e293b; border: 1px solid #e2e8f0; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
-.loader-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; font-weight: 600; color: #1e293b; }
-.loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+.loader-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; font-weight: 600; color: #1e293b; text-align: center; }
+.loader-content { width: 100%; max-width: 300px; display: flex; flex-direction: column; align-items: center; }
+.progress-info { width: 100%; margin-top: 1rem; }
+.progress-container { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
+.progress-bar { height: 100%; background: #3b82f6; transition: width 0.3s ease; }
+.loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>

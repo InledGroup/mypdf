@@ -113,13 +113,13 @@ const startDrag = (e: MouseEvent, type: 'move' | 'nw' | 'ne' | 'sw' | 'se') => {
         <div class="overlay-layer">
           <template v-if="watermark?.enabled">
             <div v-if="watermark.repeat" class="watermark-grid">
-               <div v-for="n in 12" :key="n" class="wm-cell" :style="{ opacity: watermark.opacity, color: watermark.color, fontSize: (watermark.size/4) + 'px', transform: `rotate(${watermark.rotation}deg)` }">
+               <div v-for="n in 12" :key="n" class="wm-cell" :style="{ opacity: watermark.opacity, color: watermark.color, fontSize: (watermark.size/2.5) + 'px', transform: `rotate(${watermark.rotation}deg)` }">
                   <template v-if="watermark.type === 'text'">{{ watermark.text }}</template>
                   <img v-else-if="watermark.image" :src="watermark.image" class="wm-img" />
                </div>
             </div>
             <div v-else class="watermark-single" :style="getPreviewPosStyle(watermark.pos)">
-               <div :style="{ opacity: watermark.opacity, color: watermark.color, fontSize: (watermark.size/2) + 'px', transform: `rotate(${watermark.rotation}deg)` }">
+               <div :style="{ opacity: watermark.opacity, color: watermark.color, fontSize: watermark.size + 'px', transform: `rotate(${watermark.rotation}deg)` }">
                   <template v-if="watermark.type === 'text'">{{ watermark.text }}</template>
                   <img v-else-if="watermark.image" :src="watermark.image" class="wm-img" />
                </div>
