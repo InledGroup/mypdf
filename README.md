@@ -85,4 +85,4 @@ Unlike other PDF tools that upload your sensitive documents to remote servers, P
 This project is licensed under GNU GPL v3.0.
 
 ---
-Developed with ❤️ by the PDFTools Team.
+Developed with ❤️ by JaimeGH.
