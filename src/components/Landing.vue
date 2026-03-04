@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LayoutGrid, RotateCcw, FileStack, Download, CheckCircle, Type, Scissors } from 'lucide-vue-next'
+import { LayoutGrid, RotateCcw, FileStack, CheckCircle, Type, Scissors, Hash, Stamp, Crop } from 'lucide-vue-next'
 
 defineEmits(['select-tool'])
 </script>
@@ -30,6 +30,15 @@ defineEmits(['select-tool'])
         <span class="tool-badge">New</span>
       </div>
 
+      <div class="tool-card active" @click="$emit('select-tool', 'crop')">
+        <div class="tool-icon">
+          <Crop :size="32" />
+        </div>
+        <h3>Crop PDF</h3>
+        <p>Trim page margins or select specific areas to keep in your document.</p>
+        <span class="tool-badge">Essential</span>
+      </div>
+
       <div class="tool-card active" @click="$emit('select-tool', 'merge')">
         <div class="tool-icon">
           <FileStack :size="32" />
@@ -46,6 +55,24 @@ defineEmits(['select-tool'])
         <h3>Split PDF</h3>
         <p>Divide documents by ranges, even/odd pages, or manually into separate files.</p>
         <span class="tool-badge">Essential</span>
+      </div>
+
+      <div class="tool-card active" @click="$emit('select-tool', 'numbering')">
+        <div class="tool-icon">
+          <Hash :size="32" />
+        </div>
+        <h3>Page Numbering</h3>
+        <p>Add customizable page numbers with custom positions, colors, and backgrounds.</p>
+        <span class="tool-badge">New</span>
+      </div>
+
+      <div class="tool-card active" @click="$emit('select-tool', 'watermark')">
+        <div class="tool-icon">
+          <Stamp :size="32" />
+        </div>
+        <h3>Watermark</h3>
+        <p>Protect your documents with custom text or image watermarks.</p>
+        <span class="tool-badge">Pro</span>
       </div>
 
       <div class="tool-card active" @click="$emit('select-tool', 'ocr')">
@@ -76,106 +103,18 @@ defineEmits(['select-tool'])
 </template>
 
 <style scoped>
-.landing {
-  padding: 1rem 0;
-}
-
-.hero {
-  text-align: center;
-  margin-bottom: 4rem;
-}
-
-.hero h1 {
-  font-size: 3.5rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-  color: #111827;
-  letter-spacing: -0.025em;
-}
-
-.hero p {
-  font-size: 1.25rem;
-  color: var(--text-muted);
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.tools-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-bottom: 4rem;
-}
-
-.tool-card {
-  background: white;
-  padding: 2.5rem;
-  border-radius: 1.5rem;
-  border: 1px solid #e2e8f0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  position: relative;
-  cursor: pointer;
-}
-
-.tool-card:hover {
-  transform: translateY(-8px);
-  border-color: var(--primary);
-  box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04);
-}
-
-.tool-icon {
-  background: #eff6ff;
-  color: var(--primary);
-  padding: 1.25rem;
-  border-radius: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.tool-card h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-  color: #111827;
-}
-
-.tool-card p {
-  color: var(--text-muted);
-  line-height: 1.6;
-  margin-bottom: 2rem;
-}
-
-.tool-badge {
-  position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.35rem 0.85rem;
-  border-radius: 9999px;
-  background: #dcfce7;
-  color: #166534;
-  text-transform: uppercase;
-}
-
-.features-row {
-  display: flex;
-  justify-content: center;
-  gap: 3rem;
-  margin-top: 2rem;
-}
-
-.feature {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--text-main);
-  font-weight: 500;
-}
-
-.text-primary {
-  color: var(--primary);
-}
+.landing { padding: 1rem 0; }
+.hero { text-align: center; margin-bottom: 4rem; }
+.hero h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; color: #111827; letter-spacing: -0.025em; }
+.hero p { font-size: 1.25rem; color: var(--text-muted); max-width: 600px; margin: 0 auto; }
+.tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; margin-bottom: 4rem; }
+.tool-card { background: white; padding: 2.5rem; border-radius: 1.5rem; border: 1px solid #e2e8f0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; align-items: flex-start; position: relative; cursor: pointer; min-height: 280px; }
+.tool-card:hover { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04); }
+.tool-icon { background: #eff6ff; color: var(--primary); padding: 1.25rem; border-radius: 1rem; margin-bottom: 1.5rem; }
+.tool-card h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; color: #111827; }
+.tool-card p { color: var(--text-muted); line-height: 1.6; margin-bottom: 2rem; }
+.tool-badge { position: absolute; top: 1.5rem; right: 1.5rem; font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px; background: #dcfce7; color: #166534; text-transform: uppercase; }
+.features-row { display: flex; justify-content: center; gap: 3rem; margin-top: 2rem; }
+.feature { display: flex; align-items: center; gap: 0.75rem; color: var(--text-main); font-weight: 500; }
+.text-primary { color: var(--primary); }
 </style>

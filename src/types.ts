@@ -7,7 +7,8 @@ export interface PageInfo {
   rotation: number;
   width: number;
   height: number;
-  group?: number; // For splitting
+  group?: number;
+  crop?: { x: number; y: number; width: number; height: number };
 }
 
 export interface LoadedFile {
@@ -15,5 +16,5 @@ export interface LoadedFile {
   arrayBuffer: ArrayBuffer;
 }
 
-export type ToolType = 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split';
+export type ToolType = 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop';
 export type ViewMode = 'mosaic' | 'individual';

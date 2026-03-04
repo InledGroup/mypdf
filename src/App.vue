@@ -2,12 +2,12 @@
 import { ref } from 'vue'
 import Landing from './components/Landing.vue'
 import PDFWorkspace from './components/PDFWorkspace.vue'
-import { LayoutGrid, RotateCcw, FileStack, Settings, Home, Type, Scissors } from 'lucide-vue-next'
+import { LayoutGrid, RotateCcw, FileStack, Home, Type, Scissors, Hash, Stamp, Crop } from 'lucide-vue-next'
 
 const currentView = ref<'landing' | 'workspace'>('landing')
-const activeTool = ref<'reorder' | 'rotate' | 'merge' | 'ocr' | 'split'>('reorder')
+const activeTool = ref<'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop'>('reorder')
 
-const setView = (view: 'landing' | 'workspace', tool: 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' = 'reorder') => {
+const setView = (view: 'landing' | 'workspace', tool: 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop' = 'reorder') => {
   currentView.value = view
   activeTool.value = tool
 }
@@ -27,14 +27,23 @@ const setView = (view: 'landing' | 'workspace', tool: 'reorder' | 'rotate' | 'me
         <button :class="{ active: activeTool === 'rotate' }" @click="activeTool = 'rotate'">
           <RotateCcw :size="20" /> Rotate
         </button>
+        <button :class="{ active: activeTool === 'crop' }" @click="activeTool = 'crop'">
+          <Crop :size="20" /> Crop
+        </button>
         <button :class="{ active: activeTool === 'merge' }" @click="activeTool = 'merge'">
           <FileStack :size="20" /> Merge
         </button>
         <button :class="{ active: activeTool === 'split' }" @click="activeTool = 'split'">
           <Scissors :size="20" /> Split
         </button>
+        <button :class="{ active: activeTool === 'numbering' }" @click="activeTool = 'numbering'">
+          <Hash :size="20" /> Numbering
+        </button>
+        <button :class="{ active: activeTool === 'watermark' }" @click="activeTool = 'watermark'">
+          <Stamp :size="20" /> Watermark
+        </button>
         <button :class="{ active: activeTool === 'ocr' }" @click="activeTool = 'ocr'">
-          <Type :size="20" /> OCR (Searchable)
+          <Type :size="20" /> OCR
         </button>
       </nav>
 
@@ -76,7 +85,7 @@ body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-app);
   color: var(--text-main);
-  overflow: hidden; /* Control scrolling within main area */
+  overflow: hidden;
 }
 
 .app-container {
@@ -124,6 +133,7 @@ body {
   width: 100%;
   text-align: left;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
 .sidebar-nav button:hover {
@@ -153,6 +163,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  cursor: pointer;
 }
 
 /* Main Content Styles */
