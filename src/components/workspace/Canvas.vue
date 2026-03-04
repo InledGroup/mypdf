@@ -61,10 +61,10 @@ const currentPage = computed(() => {
         :numbering="numbering ? { ...numbering, index: currentPageIndex + 1 } : undefined"
         :watermark="watermark"
         @update:targetPagePos="(val) => targetPagePos = val"
-        @rotate="(dir) => $emit('rotate', currentPage.id, dir)"
-        @remove="() => $emit('remove', currentPage.id)"
-        @move="(rel) => $emit('move', currentPage.id, targetPagePos, rel)"
-        @update:crop="(crop) => $emit('update:crop', currentPage.id, crop)"
+        @rotate="(dir) => $emit('rotate', currentPage!.id, dir)"
+        @remove="() => $emit('remove', currentPage!.id)"
+        @move="(rel) => $emit('move', currentPage!.id, targetPagePos, rel)"
+        @update:crop="(crop) => $emit('update:crop', currentPage!.id, crop)"
       />
     </div>
   </div>
