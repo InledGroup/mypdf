@@ -1,16 +1,22 @@
-# ✨ PDFTools. 
+# MYPDF. 
 
->[!CAUTION]
-> This project is under development and may contain bugs.
+>[!TIP]
+> Are you looking for a private, browser-based Office suite with excelent compatibility with Office documents? Check out [Insuite Office](https://office.inled.es), it's completely free and without installation needed.
+
+
 
 **A modern, privacy-first, and browser-native PDF powerhouse.**
 
-PDFTools is a high-performance web application built with **Vue 3** and **TypeScript** that allows you to manipulate, edit, and enhance PDF files directly in your browser. No server uploads, no subscription fees—just pure client-side power.
+MYPDF is a private, local-first, browser-only, no-cloud PDF suite. With the same tools that other PDF suites offer, but with a big difference: all is procesed in your browser, nothing is uploaded to the cloud because there's not any cloud server involved.  
+Take back your privacy with MYPDF. **It's completely free**
 
 ![Version](https://img.shields.io/badge/version-0.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-GNU%20GPL%20v3.0-blue.svg)
 ![Vue](https://img.shields.io/badge/vue-%2335495e.svg?style=flat&logo=vuedotjs&logoColor=%234FC08D)
 ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=flat&logo=vite&logoColor=white)
+
+>[!NOTE]
+> If you like this project, please consider giving it a ⭐ on GitHub. Thanks!  
+> You can discover more projects focused on privacy, AI and Linux on [inled.es](https://inled.es)
 
 ---
 
@@ -24,6 +30,7 @@ PDFTools is a high-performance web application built with **Vue 3** and **TypeSc
 ### ✍️ Professional Enhancements
 - **Smart Numbering**: Add customizable page numbers automatically.
 - **Watermarking**: Secure your documents with text overlays.
+- **Password Protection**: Protect your documents with a password.
 - **Duplicate Detection**: Visually identify and manage repeated pages.
 
 ### 👁 Deep Intelligence
@@ -33,13 +40,10 @@ PDFTools is a high-performance web application built with **Vue 3** and **TypeSc
 
 ---
 
-## 🛡 Privacy & Security
+## 🛡 Use cases
 
-**Your data never leaves your computer.** 
-Unlike other PDF tools that upload your sensitive documents to remote servers, PDFTools processes everything locally using WebWorkers and client-side libraries. 
-- ✅ 100% Client-side processing.
-- ✅ No data collection.
-- ✅ Works offline.
+- **Enterprise**: Personal or corporate documents that cannot be shared externally.
+- **Personal**: Health records, legal documents...
 
 ---
 
@@ -63,8 +67,8 @@ Unlike other PDF tools that upload your sensitive documents to remote servers, P
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/youruser/pdftools.git
-   cd pdftools
+   git clone https://github.com/youruser/MYPDF.git
+   cd MYPDF
    ```
 2. Install dependencies:
    ```bash
@@ -82,7 +86,7 @@ Unlike other PDF tools that upload your sensitive documents to remote servers, P
 ---
 
 ## 📄 License
-This project is licensed under GNU GPL v3.0.
+This project is licensed under [MIT-INLED](https://license.inled.es)
 
 ---
 Developed with ❤️ by JaimeGH.
