@@ -205,7 +205,22 @@ const startDrag = (e: MouseEvent, type: 'move' | 'nw' | 'ne' | 'sw' | 'se') => {
 
 .page-badge-index { position: absolute; top: 8px; left: 8px; background: #3b82f6; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; z-index: 20; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 .group-badge { position: absolute; top: 8px; right: 8px; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 800; z-index: 20; }
-.page-actions { display: flex; gap: 0.5rem; background: white; padding: 0.4rem 0.8rem; border-radius: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); align-items: center; border: 1px solid #f1f5f9; }
+.page-actions { 
+  display: flex; 
+  gap: 0.5rem; 
+  background: white; 
+  padding: 0.4rem 0.8rem; 
+  border-radius: 2rem; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+  align-items: center; 
+  border: 1px solid #f1f5f9; 
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.page-actions button { background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 0.4rem; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.page-actions button:hover { background: #eff6ff; color: #3b82f6; border-color: #3b82f6; }
+.page-actions button.text-red { color: #ef4444; }
+.page-actions button.text-red:hover { background: #fee2e2; border-color: #f87171; color: #ef4444; }
 .order-input { width: 40px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; font-weight: 800; font-size: 0.8rem; }
 .group-select { border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.7rem; font-weight: 700; outline: none; padding: 2px; }
 .btn-action { background: #eff6ff; color: #3b82f6; border: none; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 0.65rem; cursor: pointer; }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { 
-  Grid, Rows, Plus, Download, Type, Scissors, RotateCw, Hash, Stamp, Crop, LayoutGrid, FileStack
+  Grid, Rows, Plus, Download, Type, Scissors, RotateCw, Hash, Stamp, Crop, LayoutGrid, FileStack, Settings
 } from 'lucide-vue-next'
 import type { ToolType, ViewMode } from '../../types'
 
@@ -10,10 +10,11 @@ defineProps<{
   isLoading: boolean;
   isOcrRunning: boolean;
   pagesCount: number;
+  isMobileDrawerOpen?: boolean;
 }>()
 
 defineEmits([
-  'update:viewMode', 'add-files', 'download'
+  'update:viewMode', 'add-files', 'download', 'toggle-drawer'
 ])
 </script>
 
@@ -22,17 +23,15 @@ defineEmits([
     <!-- View Navigation -->
     <div class="view-toggle">
       <button :class="{ active: viewMode === 'mosaic' }" @click="$emit('update:viewMode', 'mosaic')" title="Mosaic View">
-        <Grid :size="18" /> Mosaic
+        <Grid :size="18" /> <span class="hide-mobile">Mosaic</span>
       </button>
       <button :class="{ active: viewMode === 'individual' }" @click="$emit('update:viewMode', 'individual')" title="Individual View">
-        <Rows :size="18" /> Individual
+        <Rows :size="18" /> <span class="hide-mobile">Individual</span>
       </button>
     </div>
 
-    <div class="divider"></div>
-
-    <!-- Active Tool Indicator -->
-    <div class="tool-indicator">
+    <!-- Active Tool Indicator (Desktop Only) -->
+    <div class="tool-indicator hide-mobile">
       <div class="indicator-icon">
         <LayoutGrid v-if="activeTool === 'reorder'" :size="16" />
         <RotateCw v-else-if="activeTool === 'rotate'" :size="16" />
@@ -51,14 +50,19 @@ defineEmits([
     <!-- Global Actions -->
     <div class="global-actions">
       <label for="pdf-add-toolbar" class="btn-ghost pointer" title="Add more PDFs">
-        <Plus :size="18" /> Add Files
+        <Plus :size="18" /> <span class="hide-mobile">Add Files</span>
       </label>
       <input type="file" multiple @change="$emit('add-files', $event)" accept="application/pdf" id="pdf-add-toolbar" hidden />
       
+      <button v-if="pagesCount > 0" class="btn-ghost mobile-only" @click="$emit('toggle-drawer')" title="Settings">
+        <Settings :size="18" />
+      </button>
+
       <button @click="$emit('download')" class="btn-primary" :disabled="isLoading || pagesCount === 0">
         <Download v-if="!isOcrRunning" :size="18" />
         <div v-else class="mini-loader"></div>
-        {{ isLoading ? (isOcrRunning ? 'OCR Working...' : 'Processing...') : 'Download Result' }}
+        <span class="hide-mobile">{{ isLoading ? (isOcrRunning ? 'OCR Working...' : 'Processing...') : 'Download Result' }}</span>
+        <span class="mobile-only">{{ isLoading ? '' : 'Export' }}</span>
       </button>
     </div>
   </div>
@@ -69,6 +73,7 @@ defineEmits([
   padding: 0.75rem 2rem; background: white; border-bottom: 1px solid #e2e8f0; 
   display: flex; align-items: center; gap: 1.25rem; z-index: 40;
 }
+
 .view-toggle { display: flex; background: #f1f5f9; padding: 0.2rem; border-radius: 0.6rem; }
 .view-toggle button { 
   border: none; background: transparent; padding: 0.45rem 1rem; border-radius: 0.5rem; 
@@ -77,7 +82,6 @@ defineEmits([
 }
 .view-toggle button.active { background: white; color: #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-.divider { width: 1px; height: 24px; background: #e2e8f0; }
 .spacer { flex: 1; }
 
 .tool-indicator {
@@ -88,6 +92,7 @@ defineEmits([
 .indicator-text { font-size: 0.7rem; font-weight: 900; color: #1e40af; letter-spacing: 0.05em; }
 
 .global-actions { display: flex; align-items: center; gap: 1rem; }
+
 .btn-ghost { 
   background: transparent; border: none; font-weight: 800; color: #475569; 
   display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.6rem 1rem;
@@ -110,4 +115,35 @@ defineEmits([
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .pointer { cursor: pointer; }
+
+/* Mobile Optimizations */
+.mobile-only { display: none; }
+
+@media (max-width: 1024px) {
+  .local-toolbar {
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+  }
+  
+  .hide-mobile {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: flex;
+  }
+
+  .view-toggle button {
+    padding: 0.45rem 0.75rem;
+  }
+
+  .btn-primary {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .global-actions {
+    gap: 0.5rem;
+  }
+}
 </style>

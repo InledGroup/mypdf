@@ -3,8 +3,9 @@ import { ref, computed, watch } from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { PDFDocument, degrees, StandardFonts, rgb, PDFImage } from 'pdf-lib'
+import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite'
 import { createWorker } from 'tesseract.js'
-import { FileUp } from 'lucide-vue-next'
+import { FileUp, ChevronUp, ChevronDown, Settings } from 'lucide-vue-next'
 
 import type { PageInfo, LoadedFile, ToolType, ViewMode } from '../types'
 import Toolbar from './workspace/Toolbar.vue'
@@ -57,11 +58,18 @@ const watermarkOpacity = ref(0.3)
 const watermarkColor = ref('#000000')
 const watermarkSize = ref(50)
 
+// Protect Specific
+const protectEnabled = ref(false)
+const pdfPassword = ref('')
+
+const isMobileDrawerOpen = ref(false)
+
 // Auto-enable features
 watch(() => props.activeTool, (newTool) => {
   if (newTool === 'numbering') numberingEnabled.value = true
   if (newTool === 'watermark') watermarkEnabled.value = true
   if (newTool === 'ocr') ocrEnabled.value = true
+  if (newTool === 'protect') protectEnabled.value = true
 })
 
 // --- Computed ---
@@ -278,7 +286,13 @@ const downloadPdf = async () => {
         }
         doc.addPage(cp); gIdx++
       }
-      const bytes = await doc.save()
+      let bytes = await doc.save()
+
+      // Apply Protection if enabled
+      if (protectEnabled.value && pdfPassword.value) {
+        bytes = await encryptPDF(bytes, pdfPassword.value, pdfPassword.value)
+      }
+
       const link = document.createElement('a')
       link.href = URL.createObjectURL(new Blob([bytes as any], { type: 'application/pdf' }))
       link.download = `mypdf-export-${g}-${Date.now()}.pdf`
@@ -293,7 +307,7 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
 
 <template>
   <div class="workspace">
-    <Toolbar :active-tool="activeTool" v-model:viewMode="viewMode" :isLoading="isLoading" :isOcrRunning="isOcrRunning" :pagesCount="pages.length" @add-files="onFileChange" @download="downloadPdf" />
+    <Toolbar :active-tool="activeTool" v-model:viewMode="viewMode" :isLoading="isLoading" :isOcrRunning="isOcrRunning" :pagesCount="pages.length" @add-files="onFileChange" @download="downloadPdf" :isMobileDrawerOpen="isMobileDrawerOpen" @toggle-drawer="isMobileDrawerOpen = !isMobileDrawerOpen" />
     <div class="workspace-layout">
       <div class="workspace-main">
         <div v-if="pages.length === 0" class="empty-state">
@@ -316,36 +330,57 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
           @update:crop="handleCropUpdate"
         />
       </div>
-      <SidebarSettings v-if="pages.length > 0" 
-        :active-tool="activeTool" 
-        :pages="pages" 
-        :duplicate-count="duplicateOrders.size" 
-        v-model:ocrEnabled="ocrEnabled"
-        v-model:ocrLanguage="ocrLanguage" 
-        v-model:splitStrategy="splitStrategy" 
-        v-model:splitRange="splitRange" 
-        v-model:customRanges="customRanges" 
-        v-model:numberingEnabled="numberingEnabled" 
-        v-model:numberingPosition="numberingPosition" 
-        v-model:numberingBgColor="numberingBgColor" 
-        v-model:numberingTextColor="numberingTextColor" 
-        v-model:watermarkEnabled="watermarkEnabled"
-        v-model:watermarkType="watermarkType" 
-        v-model:watermarkText="watermarkText" 
-        v-model:watermarkImage="watermarkImage" 
-        v-model:watermarkPosition="watermarkPosition" 
-        v-model:watermarkRepeat="watermarkRepeat" 
-        v-model:watermarkRotation="watermarkRotation" 
-        v-model:watermarkOpacity="watermarkOpacity" 
-        v-model:watermarkColor="watermarkColor" 
-        v-model:watermarkSize="watermarkSize" 
-        @apply-order="applyOrder" 
-        @apply-split="applySplitGroups" 
-        @rotate-all="handleRotateAll" 
-        @apply-crop-all="applyCropAll"
-        @reset="reset"
-      />
+      <div v-if="pages.length > 0" class="settings-drawer" :class="{ 'mobile-open': isMobileDrawerOpen }">
+        <button class="drawer-handle desktop-only" @click="isMobileDrawerOpen = !isMobileDrawerOpen">
+          <ChevronUp v-if="!isMobileDrawerOpen" :size="18" />
+          <ChevronDown v-else :size="18" />
+          {{ isMobileDrawerOpen ? 'Hide Settings' : 'Configure Tool' }}
+        </button>
+        <div class="drawer-scrollable">
+          <div v-if="isMobileDrawerOpen" class="mobile-drawer-header mobile-only">
+             <h3>Tool Settings</h3>
+             <button @click="isMobileDrawerOpen = false" class="btn-close-drawer"><ChevronDown :size="24" /></button>
+          </div>
+          <SidebarSettings 
+            :active-tool="activeTool" 
+            :pages="pages" 
+            :duplicate-count="duplicateOrders.size" 
+            v-model:ocrEnabled="ocrEnabled"
+            v-model:ocrLanguage="ocrLanguage" 
+            v-model:splitStrategy="splitStrategy" 
+            v-model:splitRange="splitRange" 
+            v-model:customRanges="customRanges" 
+            v-model:numberingEnabled="numberingEnabled" 
+            v-model:numberingPosition="numberingPosition" 
+            v-model:numberingBgColor="numberingBgColor" 
+            v-model:numberingTextColor="numberingTextColor" 
+            v-model:watermarkEnabled="watermarkEnabled"
+            v-model:watermarkType="watermarkType" 
+            v-model:watermarkText="watermarkText" 
+            v-model:watermarkImage="watermarkImage" 
+            v-model:watermarkPosition="watermarkPosition" 
+            v-model:watermarkRepeat="watermarkRepeat" 
+            v-model:watermarkRotation="watermarkRotation" 
+            v-model:watermarkOpacity="watermarkOpacity" 
+            v-model:watermarkColor="watermarkColor" 
+            v-model:watermarkSize="watermarkSize" 
+            v-model:protectEnabled="protectEnabled"
+            v-model:pdfPassword="pdfPassword"
+            @apply-order="applyOrder" 
+            @apply-split="applySplitGroups" 
+            @rotate-all="handleRotateAll" 
+            @apply-crop-all="applyCropAll"
+            @reset="reset"
+          />
+        </div>
+      </div>
     </div>
+
+    <!-- Floating Action Button for Mobile Settings -->
+    <button v-if="pages.length > 0 && !isMobileDrawerOpen" class="fab-settings mobile-only" @click="isMobileDrawerOpen = true">
+      <Settings :size="24" />
+      <span>Settings</span>
+    </button>
     <div v-if="isLoading" class="loader-overlay">
       <div class="loader-content">
         <div class="loader"></div>
@@ -366,7 +401,136 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
 <style scoped>
 .workspace { display: flex; flex-direction: column; height: 100%; background: #f8fafc; }
 .workspace-layout { flex: 1; display: flex; overflow: hidden; }
+
+@media (max-width: 1024px) {
+  .workspace-layout {
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
+
 .workspace-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+@media (max-width: 1024px) {
+  .workspace-main {
+    flex: 1;
+    height: auto;
+    border-bottom: none;
+  }
+}
+
+.settings-drawer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-scrollable {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mobile-drawer-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.btn-close-drawer {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.fab-settings {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: #1e293b;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 3rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  z-index: 500;
+  transition: all 0.2s;
+}
+
+.fab-settings:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 1024px) {
+  .settings-drawer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70vh;
+    background: white;
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+    border-top-left-radius: 1.5rem;
+    border-top-right-radius: 1.5rem;
+  }
+
+  .settings-drawer.mobile-open {
+    transform: translateY(0);
+  }
+
+  .drawer-handle {
+    display: none;
+  }
+}
+
+.mobile-only { display: none; }
+.desktop-only { display: inline-flex; }
+
+@media (max-width: 1024px) {
+  .mobile-only { display: flex; }
+  .desktop-only { display: none; }
+}
+
+@media (min-width: 1025px) {
+  .drawer-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
+    width: 100%;
+    font-weight: 800;
+    color: #475569;
+    border-top-left-radius: 1.5rem;
+    border-top-right-radius: 1.5rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+}
+
 .empty-state { height: 100%; display: flex; align-items: center; justify-content: center; padding: 2rem; overflow-y: auto; }
 .upload-card { background: white; padding: 3rem; border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
 .upload-area { cursor: pointer; display: flex; flex-direction: column; align-items: center; }

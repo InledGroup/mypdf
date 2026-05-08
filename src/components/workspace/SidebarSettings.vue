@@ -2,7 +2,7 @@
 import { 
   RotateCcw, RotateCw, Scissors, 
   ListOrdered, CheckCircle2, Layout,
-  Plus, Trash2, Stamp, Image, Type as TextIcon, Search, Crop
+  Plus, Trash2, Stamp, Image, Type as TextIcon, Search, Crop, Lock
 } from 'lucide-vue-next'
 import type { ToolType, PageInfo } from '../../types'
 import { computed } from 'vue'
@@ -30,6 +30,8 @@ const props = defineProps<{
   watermarkOpacity: number;
   watermarkColor: string;
   watermarkSize: number;
+  protectEnabled: boolean;
+  pdfPassword: string;
 }>()
 
 const emit = defineEmits([
@@ -38,7 +40,8 @@ const emit = defineEmits([
   'update:splitStrategy', 'update:splitRange', 
   'update:numberingEnabled', 'update:numberingPosition', 'update:numberingBgColor', 'update:numberingTextColor',
   'update:watermarkEnabled', 'update:watermarkType', 'update:watermarkText', 'update:watermarkImage', 'update:watermarkPosition',
-  'update:watermarkRepeat', 'update:watermarkRotation', 'update:watermarkOpacity', 'update:watermarkColor', 'update:watermarkSize'
+  'update:watermarkRepeat', 'update:watermarkRotation', 'update:watermarkOpacity', 'update:watermarkColor', 'update:watermarkSize',
+  'update:protectEnabled', 'update:pdfPassword'
 ])
 
 const groups = computed(() => {
@@ -165,6 +168,19 @@ const posGrid = [['top-left', 'top-center', 'top-right'], ['center-left', 'cente
         </select>
       </div>
 
+      <!-- PROTECT -->
+      <div v-if="activeTool === 'protect'" class="setting-group">
+        <div class="group-label"><Lock :size="16" /> Password Protection</div>
+        <div class="toggle-item"><span>Enable Protection</span><label class="switch"><input type="checkbox" :checked="protectEnabled" @change="$emit('update:protectEnabled', ($event.target as any).checked)"><span class="slider round"></span></label></div>
+        <div v-if="protectEnabled" class="sub-settings">
+          <div class="opt-field">
+            <span>Set Password</span>
+            <input type="password" :value="pdfPassword" @input="$emit('update:pdfPassword', ($event.target as any).value)" class="sidebar-input" placeholder="Enter password..." />
+          </div>
+          <p class="info-card">The PDF will be encrypted. You will need this password to open it.</p>
+        </div>
+      </div>
+
     </div>
     <div class="sidebar-footer"><div class="summary"><span>Workspace</span><strong>{{ pages.length }} Pages</strong></div></div>
   </aside>
@@ -172,7 +188,25 @@ const posGrid = [['top-left', 'top-center', 'top-right'], ['center-left', 'cente
 
 <style scoped>
 .settings-sidebar { width: 300px; background: white; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; height: 100%; box-shadow: -4px 0 15px rgba(0,0,0,0.02); }
+
+@media (max-width: 1024px) {
+  .settings-sidebar {
+    width: 100%;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.02);
+  }
+}
+
 .sidebar-header { padding: 1.5rem; border-bottom: 1px solid #f1f5f9; }
+
+@media (max-width: 1024px) {
+  .sidebar-header {
+    padding: 1rem 1.5rem;
+  }
+}
+
 .header-flex { display: flex; justify-content: space-between; align-items: center; }
 .btn-reset { background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 4px; border-radius: 4px; }
 .btn-reset:hover { background: #fee2e2; }
@@ -180,6 +214,7 @@ const posGrid = [['top-left', 'top-center', 'top-right'], ['center-left', 'cente
 .sidebar-header p { margin: 0.25rem 0 0; font-size: 0.75rem; color: #64748b; }
 .sidebar-content { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 2.5rem; }
 .setting-group { display: flex; flex-direction: column; gap: 1rem; }
+.button-grid { display: flex; gap: 0.5rem; }
 .group-label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem; }
 .sidebar-select, .sidebar-input { width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-weight: 700; font-size: 0.85rem; background: #f8fafc; }
 .sidebar-input.mini { width: 65px; text-align: center; }

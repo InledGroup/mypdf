@@ -2,7 +2,7 @@
 import { 
   LayoutGrid, RotateCcw, FileStack, CheckCircle, Type, 
   Scissors, Hash, Stamp, Crop, ShieldCheck, WifiOff, 
-  Zap, Lock, ServerOff, Check, X, MousePointerClick
+  Zap, Lock, ServerOff, Check, X, MousePointerClick, Github
 } from 'lucide-vue-next'
 
 defineEmits(['select-tool'])
@@ -21,6 +21,12 @@ defineEmits(['select-tool'])
         Unlike other tools, MyPDF processes everything <strong>locally in your browser</strong>. 
         Your documents are never uploaded to any server.
       </p>
+
+      <div class="hero-actions">
+        <a href="https://github.com/InledGroup/mypdf" target="_blank" class="btn-github">
+          <Github :size="20" /> Audit Code on GitHub
+        </a>
+      </div>
       
       <div class="offline-challenge">
         <div class="offline-icon">
@@ -154,6 +160,12 @@ defineEmits(['select-tool'])
           <h3>OCR Text</h3>
           <p>Convert scans into searchable text.</p>
         </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'protect')">
+          <div class="tool-icon"><Lock :size="24" /></div>
+          <h3>Protect PDF</h3>
+          <p>Add a password to your PDF document.</p>
+        </div>
       </div>
     </section>
 
@@ -202,6 +214,34 @@ defineEmits(['select-tool'])
   color: #0f172a;
   margin-bottom: 1.5rem;
   letter-spacing: -0.04em;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.btn-github {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #ffffff;
+  color: #1e293b;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.btn-github:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .hero-subtitle {

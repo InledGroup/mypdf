@@ -16,5 +16,5 @@ export interface LoadedFile {
   arrayBuffer: ArrayBuffer;
 }
 
-export type ToolType = 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop';
+export type ToolType = 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop' | 'protect';
 export type ViewMode = 'mosaic' | 'individual';

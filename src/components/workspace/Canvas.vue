@@ -72,7 +72,22 @@ const currentPage = computed(() => {
 
 <style scoped>
 .canvas-area { flex: 1; overflow-y: auto; padding: 2rem; background: #f8fafc; }
+
+@media (max-width: 768px) {
+  .canvas-area {
+    padding: 1rem;
+  }
+}
+
 .mosaic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 2.5rem; }
+
+@media (max-width: 768px) {
+  .mosaic-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
 .individual-container { display: flex; flex-direction: column; gap: 2rem; align-items: center; padding-bottom: 4rem; }
 .focus-navigation { display: flex; gap: 1.5rem; align-items: center; background: white; padding: 0.5rem 1.5rem; border-radius: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
 .nav-btn { background: white; border: 1px solid #e2e8f0; padding: 0.5rem 1.2rem; border-radius: 0.5rem; font-weight: 800; color: #1e293b; cursor: pointer; }
