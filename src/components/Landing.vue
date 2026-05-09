@@ -2,7 +2,7 @@
 import { 
   LayoutGrid, RotateCcw, FileStack, CheckCircle, Type, 
   Scissors, Hash, Stamp, Crop, ShieldCheck, WifiOff, 
-  Zap, Lock, ServerOff, Check, X, MousePointerClick, Github
+  Zap, Lock, LockOpen, ServerOff, Check, X, MousePointerClick, Github
 } from 'lucide-vue-next'
 
 defineEmits(['select-tool'])
@@ -35,6 +35,76 @@ defineEmits(['select-tool'])
         <div class="offline-text">
           <strong>The Ultimate Privacy Test:</strong>
           <span>Turn off your Wi-Fi right now. The tool will keep working perfectly.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tools Grid -->
+    <section class="tools-section">
+      <div class="section-header">
+        <h2>Professional Tools</h2>
+        <p>Select a tool to start or simply drag a PDF into the workspace.</p>
+      </div>
+      
+      <div class="tools-grid">
+        <div class="tool-card active" @click="$emit('select-tool', 'reorder')">
+          <div class="tool-icon"><LayoutGrid :size="24" /></div>
+          <h3>Reorder</h3>
+          <p>Visually change the order of pages.</p>
+        </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'rotate')">
+          <div class="tool-icon"><RotateCcw :size="24" /></div>
+          <h3>Rotate</h3>
+          <p>Fix orientation for individual pages.</p>
+        </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'crop')">
+          <div class="tool-icon"><Crop :size="24" /></div>
+          <h3>Crop</h3>
+          <p>Adjust margins or remove white borders.</p>
+        </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'merge')">
+          <div class="tool-icon"><FileStack :size="24" /></div>
+          <h3>Merge / Combine</h3>
+          <p>Combine multiple documents into one.</p>
+        </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'split')">
+          <div class="tool-icon"><Scissors :size="24" /></div>
+          <h3>Split</h3>
+          <p>Extract pages or split large files.</p>
+        </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'numbering')">
+          <div class="tool-icon"><Hash :size="24" /></div>
+          <h3>Page Numbers</h3>
+          <p>Add custom page numbering.</p>
+        </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'watermark')">
+          <div class="tool-icon"><Stamp :size="24" /></div>
+          <h3>Watermark</h3>
+          <p>Protect PDFs with text or logos.</p>
+        </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'ocr')">
+          <div class="tool-icon"><Type :size="24" /></div>
+          <h3>OCR Text</h3>
+          <p>Convert scans into searchable text.</p>
+        </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'protect')">
+          <div class="tool-icon"><Lock :size="24" /></div>
+          <h3>Protect PDF</h3>
+          <p>Add a password to your PDF document.</p>
+        </div>
+
+        <div class="tool-card active" @click="$emit('select-tool', 'unlock')">
+          <div class="tool-icon"><LockOpen :size="24" /></div>
+          <h3>Unlock PDF</h3>
+          <p>Remove password or change it.</p>
         </div>
       </div>
     </section>
@@ -105,70 +175,6 @@ defineEmits(['select-tool'])
       </div>
     </section>
 
-    <!-- Tools Grid -->
-    <section class="tools-section">
-      <div class="section-header">
-        <h2>Professional Tools</h2>
-        <p>Select a tool to start or simply drag a PDF into the workspace.</p>
-      </div>
-      
-      <div class="tools-grid">
-        <div class="tool-card active" @click="$emit('select-tool', 'reorder')">
-          <div class="tool-icon"><LayoutGrid :size="24" /></div>
-          <h3>Reorder</h3>
-          <p>Visually change the order of pages.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'rotate')">
-          <div class="tool-icon"><RotateCcw :size="24" /></div>
-          <h3>Rotate</h3>
-          <p>Fix orientation for individual pages.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'crop')">
-          <div class="tool-icon"><Crop :size="24" /></div>
-          <h3>Crop</h3>
-          <p>Adjust margins or remove white borders.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'merge')">
-          <div class="tool-icon"><FileStack :size="24" /></div>
-          <h3>Merge / Combine</h3>
-          <p>Combine multiple documents into one.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'split')">
-          <div class="tool-icon"><Scissors :size="24" /></div>
-          <h3>Split</h3>
-          <p>Extract pages or split large files.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'numbering')">
-          <div class="tool-icon"><Hash :size="24" /></div>
-          <h3>Page Numbers</h3>
-          <p>Add custom page numbering.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'watermark')">
-          <div class="tool-icon"><Stamp :size="24" /></div>
-          <h3>Watermark</h3>
-          <p>Protect PDFs with text or logos.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'ocr')">
-          <div class="tool-icon"><Type :size="24" /></div>
-          <h3>OCR Text</h3>
-          <p>Convert scans into searchable text.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'protect')">
-          <div class="tool-icon"><Lock :size="24" /></div>
-          <h3>Protect PDF</h3>
-          <p>Add a password to your PDF document.</p>
-        </div>
-      </div>
-    </section>
-
     <footer class="landing-footer">
       <div class="trust-icons">
         <div class="trust-item"><Lock :size="16" /> Local Processing</div>
@@ -184,7 +190,7 @@ defineEmits(['select-tool'])
   padding: 2rem 0 4rem 0;
   display: flex;
   flex-direction: column;
-  gap: 6rem;
+  gap: 4rem;
 }
 
 /* Hero Section */

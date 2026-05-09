@@ -2,7 +2,7 @@
 import { 
   RotateCcw, RotateCw, Scissors, 
   ListOrdered, CheckCircle2, Layout,
-  Plus, Trash2, Stamp, Image, Type as TextIcon, Search, Crop, Lock
+  Plus, Trash2, Stamp, Image, Type as TextIcon, Search, Crop, Lock, LockOpen, Zap
 } from 'lucide-vue-next'
 import type { ToolType, PageInfo } from '../../types'
 import { computed } from 'vue'
@@ -32,16 +32,22 @@ const props = defineProps<{
   watermarkSize: number;
   protectEnabled: boolean;
   pdfPassword: string;
+  unlockEnabled: boolean;
+  unlockPasswordInput: string;
+  bruteForceEnabled: boolean;
+  isBruteForcing: boolean;
+  bruteForceStatus: string;
 }>()
 
 const emit = defineEmits([
-  'apply-order', 'rotate-all', 'apply-split', 'apply-crop-all', 'reset',
+  'apply-order', 'rotate-all', 'apply-split', 'apply-crop-all', 'reset', 'start-brute-force', 'manual-unlock',
   'update:ocrEnabled', 'update:ocrLanguage', 
   'update:splitStrategy', 'update:splitRange', 
   'update:numberingEnabled', 'update:numberingPosition', 'update:numberingBgColor', 'update:numberingTextColor',
   'update:watermarkEnabled', 'update:watermarkType', 'update:watermarkText', 'update:watermarkImage', 'update:watermarkPosition',
   'update:watermarkRepeat', 'update:watermarkRotation', 'update:watermarkOpacity', 'update:watermarkColor', 'update:watermarkSize',
-  'update:protectEnabled', 'update:pdfPassword'
+  'update:protectEnabled', 'update:pdfPassword',
+  'update:unlockEnabled', 'update:unlockPasswordInput', 'update:bruteForceEnabled'
 ])
 
 const groups = computed(() => {
@@ -181,6 +187,46 @@ const posGrid = [['top-left', 'top-center', 'top-right'], ['center-left', 'cente
         </div>
       </div>
 
+      <!-- UNLOCK -->
+      <div v-if="activeTool === 'unlock'" class="setting-group">
+        <div class="group-label"><LockOpen :size="16" /> Unlock / Decrypt</div>
+        
+        <div class="sub-settings" style="border-left: none; padding-left: 0;">
+          <div class="opt-field">
+            <span>Known Password</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="password" :value="unlockPasswordInput" @input="$emit('update:unlockPasswordInput', ($event.target as any).value)" class="sidebar-input" placeholder="Enter password..." />
+              <button @click="$emit('manual-unlock')" class="btn-action primary" style="width: auto; padding: 0 1rem;">Unlock</button>
+            </div>
+          </div>
+
+          <div class="divider" style="height: 1px; background: #e2e8f0; margin: 1rem 0;"></div>
+
+          <div class="toggle-item">
+            <span>Brute Force</span>
+            <label class="switch">
+              <input type="checkbox" :checked="bruteForceEnabled" @change="$emit('update:bruteForceEnabled', ($event.target as any).checked)">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div v-if="bruteForceEnabled" class="sub-settings" style="margin-top: 1rem;">
+            <p class="info-card" style="margin-bottom: 1rem;">
+              Attempt to find the password by trying combinations (0-9, a-z).
+              <br><strong>Warning:</strong> Browser performance may vary.
+            </p>
+            <button @click="$emit('start-brute-force')" class="btn-action primary" :disabled="isBruteForcing">
+              <Zap v-if="!isBruteForcing" :size="16" />
+              <div v-else class="loader mini" style="width: 16px; height: 16px; border-width: 2px;"></div>
+              {{ isBruteForcing ? 'Cracking...' : 'Start Brute Force' }}
+            </button>
+            <p v-if="bruteForceStatus" class="status-text" style="font-size: 0.75rem; font-weight: 700; color: #3b82f6; margin-top: 0.5rem; text-align: center;">
+              {{ bruteForceStatus }}
+            </p>
+          </div>
+        </div>
+      </div>
+
     </div>
     <div class="sidebar-footer"><div class="summary"><span>Workspace</span><strong>{{ pages.length }} Pages</strong></div></div>
   </aside>
@@ -216,6 +262,14 @@ const posGrid = [['top-left', 'top-center', 'top-right'], ['center-left', 'cente
 .setting-group { display: flex; flex-direction: column; gap: 1rem; }
 .button-grid { display: flex; gap: 0.5rem; }
 .group-label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem; }
+.loader.mini {
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
 .sidebar-select, .sidebar-input { width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-weight: 700; font-size: 0.85rem; background: #f8fafc; }
 .sidebar-input.mini { width: 65px; text-align: center; }
 .btn-action { width: 100%; padding: 0.8rem; border-radius: 0.75rem; border: none; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer; }

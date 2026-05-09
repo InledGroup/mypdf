@@ -5,7 +5,7 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { PDFDocument, degrees, StandardFonts, rgb, PDFImage } from 'pdf-lib'
 import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite'
 import { createWorker } from 'tesseract.js'
-import { FileUp, ChevronUp, ChevronDown, Settings } from 'lucide-vue-next'
+import { FileUp, ChevronUp, ChevronDown, Settings, Lock, Zap } from 'lucide-vue-next'
 
 import type { PageInfo, LoadedFile, ToolType, ViewMode } from '../types'
 import Toolbar from './workspace/Toolbar.vue'
@@ -62,6 +62,13 @@ const watermarkSize = ref(50)
 const protectEnabled = ref(false)
 const pdfPassword = ref('')
 
+// Unlock Specific
+const unlockEnabled = ref(false)
+const unlockPasswordInput = ref('')
+const bruteForceEnabled = ref(false)
+const isBruteForcing = ref(false)
+const bruteForceStatus = ref('')
+
 const isMobileDrawerOpen = ref(false)
 
 // Auto-enable features
@@ -70,6 +77,7 @@ watch(() => props.activeTool, (newTool) => {
   if (newTool === 'watermark') watermarkEnabled.value = true
   if (newTool === 'ocr') ocrEnabled.value = true
   if (newTool === 'protect') protectEnabled.value = true
+  if (newTool === 'unlock') unlockEnabled.value = true
 })
 
 // --- Computed ---
@@ -100,47 +108,147 @@ const onFileChange = async (e: Event) => {
     loadingTotalPages.value = 0
     
     const files = Array.from(target.files)
-    // Pre-calculate total pages
     for (const file of files) {
       const arrayBuffer = await file.arrayBuffer()
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) })
-      const pdfDoc = await loadingTask.promise
-      loadingTotalPages.value += pdfDoc.numPages
-    }
-
-    for (const file of files) {
-      const arrayBuffer = await file.arrayBuffer()
+      const fileIndex = loadedFiles.value.length
       loadedFiles.value.push({ name: file.name, arrayBuffer })
-      await loadPagesFromFile(arrayBuffer, loadedFiles.value.length - 1)
+      
+      // If we are in unlock mode, we don't block if loading fails due to password
+      // We just keep the file in loadedFiles so the user can unlock it from settings
+      await loadPagesFromFile(arrayBuffer, fileIndex)
     }
     isLoading.value = false
   }
 }
 
-const loadPagesFromFile = async (buffer: ArrayBuffer, fileIndex: number) => {
-  const loadingTask = pdfjsLib.getDocument({ data: buffer.slice(0) })
-  const pdfDoc = await loadingTask.promise
-  for (let i = 1; i <= pdfDoc.numPages; i++) {
-    const page = await pdfDoc.getPage(i)
-    const viewport = page.getViewport({ scale: 2.0 })
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('2d')
-    canvas.height = viewport.height
-    canvas.width = viewport.width
-    await page.render({ canvasContext: context!, viewport, intent: 'print' } as any).promise
-    pages.value.push({
-      id: `f${fileIndex}-p${i}-${Math.random().toString(36).substr(2, 9)}`,
-      originalFileIndex: fileIndex,
-      originalPageIndex: i - 1,
-      order: pages.value.length + 1,
-      dataUrl: canvas.toDataURL('image/jpeg', 0.9),
-      rotation: 0,
-      width: viewport.width / 2.0,
-      height: viewport.height / 2.0,
-      group: undefined,
-      crop: { x: 0, y: 0, width: 100, height: 100 }
-    })
-    loadingCurrentPage.value++
+const loadPagesFromFile = async (buffer: ArrayBuffer, fileIndex: number, password?: string): Promise<boolean> => {
+  try {
+    const loadingTask = pdfjsLib.getDocument({ data: buffer.slice(0), password })
+    const pdfDoc = await loadingTask.promise
+    
+    // Store successful password for later export
+    if (loadedFiles.value[fileIndex]) {
+      loadedFiles.value[fileIndex].password = password
+    }
+
+    loadingTotalPages.value += pdfDoc.numPages
+    
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      const page = await pdfDoc.getPage(i)
+      const viewport = page.getViewport({ scale: 2.0 })
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d')
+      canvas.height = viewport.height
+      canvas.width = viewport.width
+      await page.render({ canvasContext: context!, viewport, intent: 'print' } as any).promise
+      pages.value.push({
+        id: `f${fileIndex}-p${i}-${Math.random().toString(36).substr(2, 9)}`,
+        originalFileIndex: fileIndex,
+        originalPageIndex: i - 1,
+        order: pages.value.length + 1,
+        dataUrl: canvas.toDataURL('image/jpeg', 0.9),
+        rotation: 0,
+        width: viewport.width / 2.0,
+        height: viewport.height / 2.0,
+        group: undefined,
+        crop: { x: 0, y: 0, width: 100, height: 100 }
+      })
+      loadingCurrentPage.value++
+    }
+    return true
+  } catch (error: any) {
+    if (error.name === 'PasswordException') {
+      if (props.activeTool === 'unlock') {
+        return false
+      } else {
+        const pwd = prompt('This PDF is password protected. Enter password:')
+        if (pwd) return await loadPagesFromFile(buffer, fileIndex, pwd)
+      }
+      return false
+    } else {
+      console.error(error)
+      return false
+    }
+  }
+}
+
+const handleManualUnlock = async () => {
+  if (loadedFiles.value.length === 0) return
+  isLoading.value = true
+  const file = loadedFiles.value[loadedFiles.value.length - 1]
+  if (file) {
+    const success = await loadPagesFromFile(file.arrayBuffer, loadedFiles.value.length - 1, unlockPasswordInput.value)
+    if (!success) alert('Invalid password. Please try again.')
+    else {
+      // Clear status if successful
+      bruteForceStatus.value = ''
+    }
+  }
+  isLoading.value = false
+}
+
+const startBruteForce = async () => {
+  if (loadedFiles.value.length === 0) return
+  isBruteForcing.value = true
+  bruteForceStatus.value = 'Preparing...'
+  
+  const charset = '0123456789abcdefghijklmnopqrstuvwxyz'
+  const maxLen = 4 
+  
+  const file = loadedFiles.value[loadedFiles.value.length - 1]
+  if (!file) { isBruteForcing.value = false; return }
+
+  const generatePasswords = function* (length: number, current = ''): Generator<string> {
+    if (current.length === length) {
+      yield current
+      return
+    }
+    for (const char of charset) {
+      yield* generatePasswords(length, current + char)
+    }
+  }
+
+  try {
+    let attempts = 0
+    for (let len = 1; len <= maxLen; len++) {
+      for (const pwd of generatePasswords(len)) {
+        if (!isBruteForcing.value) break
+        
+        attempts++
+        // Update status and yield to UI every 5 attempts to prevent "toast"
+        if (attempts % 5 === 0) {
+          bruteForceStatus.value = `Trying: ${pwd} (${attempts} attempts)`
+          await new Promise(r => setTimeout(r, 10)) 
+        }
+
+        try {
+          const loadingTask = pdfjsLib.getDocument({ data: file.arrayBuffer.slice(0), password: pwd })
+          const pdfDoc = await loadingTask.promise
+          
+          // Success!
+          unlockPasswordInput.value = pwd
+          isBruteForcing.value = false
+          bruteForceStatus.value = `Found: ${pwd}! Rendering pages...`
+          
+          // Properly load the pages now
+          await loadPagesFromFile(file.arrayBuffer, loadedFiles.value.length - 1, pwd)
+          
+          bruteForceStatus.value = `Unlocked successfully with password: ${pwd}`
+          
+          // Cleanup PDF.js doc
+          await pdfDoc.destroy()
+          return
+        } catch (e: any) {
+          if (e.name !== 'PasswordException') throw e
+        }
+      }
+    }
+    if (isBruteForcing.value) bruteForceStatus.value = "Not found (tried up to 4 chars)"
+  } catch (e) {
+    console.error(e)
+    bruteForceStatus.value = "Error during brute force"
+  } finally {
+    isBruteForcing.value = false
   }
 }
 
@@ -203,16 +311,45 @@ const downloadPdf = async () => {
       const gPages = sortedPages.value.filter(p => (p.group || 1) === g)
       let gIdx = 1
       for (const pInfo of gPages) {
-        const fileBuffer = loadedFiles.value[pInfo.originalFileIndex]?.arrayBuffer
-        if (!fileBuffer) continue
-        if (!cache[pInfo.originalFileIndex]) cache[pInfo.originalFileIndex] = await PDFDocument.load(fileBuffer)
-        const srcDoc = cache[pInfo.originalFileIndex]!
-        const [cp] = await doc.copyPages(srcDoc, [pInfo.originalPageIndex])
-        if (!cp) continue
+        const file = loadedFiles.value[pInfo.originalFileIndex]
+        if (!file) continue
+        
+        if (!cache[pInfo.originalFileIndex]) {
+          try {
+            // pdf-lib does not support password decryption, so we attempt a normal load
+            cache[pInfo.originalFileIndex] = await PDFDocument.load(file.arrayBuffer)
+          } catch (e) {
+            // If it fails (likely due to encryption), we set it to null to trigger image fallback
+            cache[pInfo.originalFileIndex] = null as any
+          }
+        }
+
+        const srcDoc = cache[pInfo.originalFileIndex]
+        let cp: any
+        
+        if (srcDoc) {
+          try {
+            [cp] = await doc.copyPages(srcDoc, [pInfo.originalPageIndex])
+          } catch (e) {
+            // Fallback if copyPages fails on encrypted content
+            srcDoc = null as any
+          }
+        }
+
+        if (!srcDoc) {
+          // IMAGE FALLBACK: Recreate the page from the rendered image
+          const imgBytes = await fetch(pInfo.dataUrl).then(r => r.arrayBuffer())
+          const img = await doc.embedJpg(imgBytes)
+          cp = doc.addPage([pInfo.width, pInfo.height])
+          cp.drawImage(img, { x: 0, y: 0, width: pInfo.width, height: pInfo.height })
+        } else {
+          doc.addPage(cp)
+        }
+
         const { width, height } = cp.getSize()
         
         // Final orientation calculation
-        const originalRotation = cp.getRotation().angle
+        const originalRotation = cp.getRotation ? cp.getRotation().angle : 0
         const totalRotation = (originalRotation + (pInfo.rotation || 0)) % 360
         const isRotated = totalRotation % 180 !== 0
         const vWidth = isRotated ? height : width
@@ -314,6 +451,12 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
           <div class="upload-card">
             <input type="file" multiple @change="onFileChange" accept="application/pdf" id="pdf-upload" hidden />
             <label for="pdf-upload" class="upload-area"><div class="icon-circle"><FileUp :size="40" /></div><h3>Upload PDF Files</h3><p>Select documents to start</p><span class="btn-secondary">Browse Files</span></label>
+            
+            <div v-if="loadedFiles.length > 0 && props.activeTool === 'unlock'" class="locked-status" style="margin-top: 2rem; padding: 1rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 1rem; color: #92400e; font-size: 0.875rem;">
+              <Lock :size="20" style="margin-bottom: 0.5rem;" />
+              <p><strong>{{ loadedFiles[0].name }}</strong> is locked.</p>
+              <p>Use the settings on the right to unlock it.</p>
+            </div>
           </div>
         </div>
         <Canvas v-else 
@@ -330,7 +473,7 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
           @update:crop="handleCropUpdate"
         />
       </div>
-      <div v-if="pages.length > 0" class="settings-drawer" :class="{ 'mobile-open': isMobileDrawerOpen }">
+      <div v-if="pages.length > 0 || (loadedFiles.length > 0 && props.activeTool === 'unlock')" class="settings-drawer" :class="{ 'mobile-open': isMobileDrawerOpen }">
         <button class="drawer-handle desktop-only" @click="isMobileDrawerOpen = !isMobileDrawerOpen">
           <ChevronUp v-if="!isMobileDrawerOpen" :size="18" />
           <ChevronDown v-else :size="18" />
@@ -366,11 +509,18 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
             v-model:watermarkSize="watermarkSize" 
             v-model:protectEnabled="protectEnabled"
             v-model:pdfPassword="pdfPassword"
+            v-model:unlockEnabled="unlockEnabled"
+            v-model:unlockPasswordInput="unlockPasswordInput"
+            v-model:bruteForceEnabled="bruteForceEnabled"
+            :isBruteForcing="isBruteForcing"
+            :bruteForceStatus="bruteForceStatus"
             @apply-order="applyOrder" 
             @apply-split="applySplitGroups" 
             @rotate-all="handleRotateAll" 
             @apply-crop-all="applyCropAll"
             @reset="reset"
+            @start-brute-force="startBruteForce"
+            @manual-unlock="handleManualUnlock"
           />
         </div>
       </div>

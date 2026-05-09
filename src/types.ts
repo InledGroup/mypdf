@@ -14,7 +14,8 @@ export interface PageInfo {
 export interface LoadedFile {
   name: string;
   arrayBuffer: ArrayBuffer;
+  password?: string;
 }
 
-export type ToolType = 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop' | 'protect';
+export type ToolType = 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop' | 'protect' | 'unlock';
 export type ViewMode = 'mosaic' | 'individual';

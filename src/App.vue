@@ -2,13 +2,13 @@
 import { ref } from 'vue'
 import Landing from './components/Landing.vue'
 import PDFWorkspace from './components/PDFWorkspace.vue'
-import { LayoutGrid, RotateCcw, FileStack, Home, Type, Scissors, Hash, Stamp, Crop, Lock, Menu, X } from 'lucide-vue-next'
+import { LayoutGrid, RotateCcw, FileStack, Home, Type, Scissors, Hash, Stamp, Crop, Lock, LockOpen, Menu, X } from 'lucide-vue-next'
 
 const currentView = ref<'landing' | 'workspace'>('landing')
-const activeTool = ref<'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop' | 'protect'>('reorder')
+const activeTool = ref<'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop' | 'protect' | 'unlock'>('reorder')
 const isMobileMenuOpen = ref(false)
 
-const setView = (view: 'landing' | 'workspace', tool: 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop' | 'protect' = 'reorder') => {
+const setView = (view: 'landing' | 'workspace', tool: 'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop' | 'protect' | 'unlock' = 'reorder') => {
   currentView.value = view
   activeTool.value = tool
   isMobileMenuOpen.value = false
@@ -70,6 +70,9 @@ const selectTool = (tool: any) => {
         </button>
         <button :class="{ active: activeTool === 'protect' }" @click="selectTool('protect')">
           <Lock :size="20" /> Protect
+        </button>
+        <button :class="{ active: activeTool === 'unlock' }" @click="selectTool('unlock')">
+          <LockOpen :size="20" /> Unlock
         </button>
       </nav>
 
