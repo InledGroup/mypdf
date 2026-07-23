@@ -13,7 +13,7 @@ const props = defineProps<{
   watermark?: any;
 }>()
 
-const emit = defineEmits(['rotate', 'remove', 'move', 'update:targetPagePos', 'update:crop'])
+const emit = defineEmits(['rotate', 'remove', 'move', 'update:targetPagePos', 'update:crop', 'reorder'])
 
 const currentPageIndex = ref(0)
 const targetPagePos = ref<number | null>(null)
@@ -25,6 +25,43 @@ const currentPage = computed(() => {
   if (props.sortedPages.length === 0) return null
   return props.sortedPages[currentPageIndex.value] || null
 })
+
+// Drag and drop state
+const draggedPageId = ref<string | null>(null)
+
+const onDragStart = (e: DragEvent, pageId: string) => {
+  if (props.activeTool !== 'reorder') return
+  draggedPageId.value = pageId
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', pageId)
+  }
+}
+
+const onDragOver = (e: DragEvent) => {
+  if (props.activeTool !== 'reorder') return
+  e.preventDefault() // Allow drop
+}
+
+const onDrop = (e: DragEvent, targetPageId: string) => {
+  if (props.activeTool !== 'reorder') return
+  e.preventDefault()
+  if (!draggedPageId.value || draggedPageId.value === targetPageId) return
+
+  const draggedIndex = props.pages.findIndex(p => p.id === draggedPageId.value)
+  const targetIndex = props.pages.findIndex(p => p.id === targetPageId)
+
+  if (draggedIndex !== -1 && targetIndex !== -1) {
+    const draggedPage = props.pages[draggedIndex]
+    const targetPage = props.pages[targetIndex]
+    if (draggedPage && targetPage) {
+      // Place dragged item slightly before or after depending on original index comparison
+      draggedPage.order = targetIndex > draggedIndex ? targetPage.order + 0.5 : targetPage.order - 0.5
+      emit('reorder')
+    }
+  }
+  draggedPageId.value = null
+}
 </script>
 
 <template>
@@ -39,17 +76,28 @@ const currentPage = computed(() => {
         :target-page-pos="null"
         :numbering="numbering ? { ...numbering, index: idx + 1 } : undefined"
         :watermark="watermark"
+        :draggable="activeTool === 'reorder'"
+        @dragstart="onDragStart($event, page.id)"
+        @dragover="onDragOver($event)"
+        @drop="onDrop($event, page.id)"
+        @dragend="draggedPageId = null"
         @rotate="(dir) => $emit('rotate', page.id, dir)"
         @remove="() => $emit('remove', page.id)"
         @update:crop="(crop) => $emit('update:crop', page.id, crop)"
+        :class="{ 'is-dragging': draggedPageId === page.id }"
+        :style="{ cursor: activeTool === 'reorder' ? 'grab' : 'default' }"
       />
     </div>
 
     <div v-else-if="currentPage" class="individual-container">
-      <div class="focus-navigation">
-        <button @click="prev" :disabled="currentPageIndex === 0" class="nav-btn">Prev</button>
+      <div class="focus-nav">
+        <fluent-button appearance="subtle" @click="prev" :disabled="currentPageIndex === 0" class="nav-btn">
+          ← Prev
+        </fluent-button>
         <span class="nav-info">{{ currentPageIndex + 1 }} / {{ pages.length }}</span>
-        <button @click="next" :disabled="currentPageIndex === pages.length - 1" class="nav-btn">Next</button>
+        <fluent-button appearance="subtle" @click="next" :disabled="currentPageIndex === pages.length - 1" class="nav-btn">
+          Next →
+        </fluent-button>
       </div>
 
       <PageCard 
@@ -71,26 +119,66 @@ const currentPage = computed(() => {
 </template>
 
 <style scoped>
-.canvas-area { flex: 1; overflow-y: auto; padding: 2rem; background: #f8fafc; }
+.canvas-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacingHorizontalXXL);
+}
 
 @media (max-width: 768px) {
   .canvas-area {
-    padding: 1rem;
+    padding: var(--spacingHorizontalM);
   }
 }
 
-.mosaic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 2.5rem; }
+.mosaic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--spacingHorizontalXXL);
+}
 
 @media (max-width: 768px) {
   .mosaic-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1.5rem;
+    gap: var(--spacingHorizontalL);
   }
 }
 
-.individual-container { display: flex; flex-direction: column; gap: 2rem; align-items: center; padding-bottom: 4rem; }
-.focus-navigation { display: flex; gap: 1.5rem; align-items: center; background: white; padding: 0.5rem 1.5rem; border-radius: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
-.nav-btn { background: white; border: 1px solid #e2e8f0; padding: 0.5rem 1.2rem; border-radius: 0.5rem; font-weight: 800; color: #1e293b; cursor: pointer; }
-.nav-btn:disabled { opacity: 0.4; }
-.nav-info { font-weight: 800; color: #3b82f6; font-size: 0.9rem; min-width: 60px; text-align: center; }
+.individual-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacingHorizontalXXL);
+  align-items: center;
+  padding-bottom: 4rem;
+}
+
+.focus-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacingHorizontalL);
+  padding: var(--spacingVerticalXS) var(--spacingHorizontalM);
+  background: var(--colorNeutralBackgroundCard);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusLarge);
+}
+
+.nav-btn {
+  --button-height: 32px;
+  --button-padding-end: var(--spacingHorizontalM);
+  --button-padding-start: var(--spacingHorizontalM);
+}
+
+.nav-info {
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorBrandForeground1);
+  font-size: var(--fontSizeBase300);
+  min-width: 50px;
+  text-align: center;
+}
+
+/* Dragging styles */
+.is-dragging {
+  opacity: 0.4;
+  border: 1px dashed var(--colorBrandStroke1);
+}
 </style>

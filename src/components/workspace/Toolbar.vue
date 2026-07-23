@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { 
-  Grid, Rows, Plus, Download, Type, Scissors, RotateCw, Hash, Stamp, Crop, LayoutGrid, FileStack, Settings
-} from 'lucide-vue-next'
+import { LayoutGrid, FileText, Plus, Download } from 'lucide-vue-next'
 import type { ToolType, ViewMode } from '../../types'
 
 defineProps<{
@@ -20,130 +18,203 @@ defineEmits([
 
 <template>
   <div class="local-toolbar">
-    <!-- View Navigation -->
-    <div class="view-toggle">
-      <button :class="{ active: viewMode === 'mosaic' }" @click="$emit('update:viewMode', 'mosaic')" title="Mosaic View">
-        <Grid :size="18" /> <span class="hide-mobile">Mosaic</span>
+    <div class="view-toggle" role="tablist">
+      <button
+        :class="['toggle-btn', { 'toggle-btn--active': viewMode === 'mosaic' }]"
+        role="tab"
+        :aria-selected="viewMode === 'mosaic'"
+        @click="$emit('update:viewMode', 'mosaic')"
+      >
+        <LayoutGrid :size="16" />
+        <span class="hide-mobile">Mosaic</span>
       </button>
-      <button :class="{ active: viewMode === 'individual' }" @click="$emit('update:viewMode', 'individual')" title="Individual View">
-        <Rows :size="18" /> <span class="hide-mobile">Individual</span>
+      <button
+        :class="['toggle-btn', { 'toggle-btn--active': viewMode === 'individual' }]"
+        role="tab"
+        :aria-selected="viewMode === 'individual'"
+        @click="$emit('update:viewMode', 'individual')"
+      >
+        <FileText :size="16" />
+        <span class="hide-mobile">Individual</span>
       </button>
     </div>
 
-    <!-- Active Tool Indicator (Desktop Only) -->
     <div class="tool-indicator hide-mobile">
-      <div class="indicator-icon">
-        <LayoutGrid v-if="activeTool === 'reorder'" :size="16" />
-        <RotateCw v-else-if="activeTool === 'rotate'" :size="16" />
-        <FileStack v-else-if="activeTool === 'merge'" :size="16" />
-        <Scissors v-else-if="activeTool === 'split'" :size="16" />
-        <Hash v-else-if="activeTool === 'numbering'" :size="16" />
-        <Stamp v-else-if="activeTool === 'watermark'" :size="16" />
-        <Crop v-else-if="activeTool === 'crop'" :size="16" />
-        <Type v-else-if="activeTool === 'ocr'" :size="16" />
-      </div>
-      <span class="indicator-text">{{ activeTool.toUpperCase() }} MODE</span>
+      {{ activeTool.toUpperCase() }}
     </div>
 
     <div class="spacer"></div>
 
-    <!-- Global Actions -->
     <div class="global-actions">
-      <label for="pdf-add-toolbar" class="btn-ghost pointer" title="Add more PDFs">
-        <Plus :size="18" /> <span class="hide-mobile">Add Files</span>
+      <label for="pdf-add-toolbar" class="add-files-label">
+        <Plus :size="16" />
+        <span class="hide-mobile">Add Files</span>
+        <span class="mobile-only">Add</span>
       </label>
       <input type="file" multiple @change="$emit('add-files', $event)" accept="application/pdf" id="pdf-add-toolbar" hidden />
-      
-      <button v-if="pagesCount > 0" class="btn-ghost mobile-only" @click="$emit('toggle-drawer')" title="Settings">
-        <Settings :size="18" />
-      </button>
 
-      <button @click="$emit('download')" class="btn-primary" :disabled="isLoading || pagesCount === 0">
-        <Download v-if="!isOcrRunning" :size="18" />
-        <div v-else class="mini-loader"></div>
-        <span class="hide-mobile">{{ isLoading ? (isOcrRunning ? 'OCR Working...' : 'Processing...') : 'Download Result' }}</span>
-        <span class="mobile-only">{{ isLoading ? '' : 'Export' }}</span>
+      <button
+        class="download-btn"
+        @click="$emit('download')"
+        :disabled="isLoading || pagesCount === 0"
+      >
+        <Download :size="16" />
+        <span class="hide-mobile">
+          {{ isLoading ? (isOcrRunning ? 'OCR Working...' : 'Processing...') : 'Download Result' }}
+        </span>
+        <span class="mobile-only">{{ isLoading ? '...' : 'Export' }}</span>
       </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.local-toolbar { 
-  padding: 0.75rem 2rem; background: white; border-bottom: 1px solid #e2e8f0; 
-  display: flex; align-items: center; gap: 1.25rem; z-index: 40;
+.local-toolbar {
+  padding: 0 16px;
+  height: 44px;
+  background: var(--colorNeutralBackground1);
+  border-bottom: 1px solid var(--colorNeutralStroke1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.view-toggle { display: flex; background: #f1f5f9; padding: 0.2rem; border-radius: 0.6rem; }
-.view-toggle button { 
-  border: none; background: transparent; padding: 0.45rem 1rem; border-radius: 0.5rem; 
-  font-size: 0.85rem; font-weight: 800; color: #64748b; display: flex; align-items: center; gap: 0.5rem; 
-  cursor: pointer; transition: all 0.2s;
+/* ── View Toggle ── */
+.view-toggle {
+  display: flex;
+  gap: 1px;
+  background: var(--colorNeutralStroke1);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
+  overflow: hidden;
 }
-.view-toggle button.active { background: white; color: #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-.spacer { flex: 1; }
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--colorNeutralBackground3);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightRegular);
+  color: var(--colorNeutralForeground2);
+  transition: background 0.1s, color 0.1s;
+}
 
+.toggle-btn:hover {
+  background: var(--colorNeutralBackground3Hover);
+  color: var(--colorNeutralForeground1);
+}
+
+.toggle-btn--active {
+  background: var(--colorBrandBackground);
+  color: var(--colorNeutralForegroundOnBrand);
+  font-weight: var(--fontWeightSemibold);
+}
+
+.toggle-btn--active:hover {
+  background: var(--colorBrandBackgroundHover);
+}
+
+/* ── Tool indicator ── */
 .tool-indicator {
-  display: flex; align-items: center; gap: 0.6rem; background: #eff6ff;
-  padding: 0.4rem 0.8rem; border-radius: 2rem; border: 1px solid #dbeafe;
+  padding: 3px 8px;
+  background: var(--colorNeutralBackground3);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusSmall);
+  font-size: var(--fontSizeBase100);
+  font-weight: var(--fontWeightBold);
+  letter-spacing: 0.06em;
+  color: var(--colorNeutralForeground2);
 }
-.indicator-icon { color: #3b82f6; display: flex; align-items: center; }
-.indicator-text { font-size: 0.7rem; font-weight: 900; color: #1e40af; letter-spacing: 0.05em; }
 
-.global-actions { display: flex; align-items: center; gap: 1rem; }
-
-.btn-ghost { 
-  background: transparent; border: none; font-weight: 800; color: #475569; 
-  display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.6rem 1rem;
-  border-radius: 0.75rem; font-size: 0.85rem;
+.spacer {
+  flex: 1;
 }
-.btn-ghost:hover { background: #f1f5f9; color: #1e293b; }
 
-.btn-primary { 
-  background: #3b82f6; color: white; border: none; padding: 0.7rem 1.5rem; 
-  border-radius: 0.8rem; font-weight: 800; display: flex; align-items: center; 
-  gap: 0.6rem; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
-  transition: all 0.2s; font-size: 0.9rem;
+/* ── Actions ── */
+.global-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-.mini-loader {
-  width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
-  border-radius: 50%; animation: spin 0.8s linear infinite;
+.add-files-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--colorNeutralBackground1);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightRegular);
+  color: var(--colorNeutralForeground1);
+  transition: background 0.1s, border-color 0.1s;
+  user-select: none;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-.pointer { cursor: pointer; }
 
-/* Mobile Optimizations */
-.mobile-only { display: none; }
+.add-files-label:hover {
+  background: var(--colorNeutralBackground1Hover);
+  border-color: var(--colorNeutralStroke1Hover);
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  background: var(--colorBrandBackground);
+  border: none;
+  border-radius: var(--borderRadiusMedium);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorNeutralForegroundOnBrand);
+  transition: background 0.1s;
+}
+
+.download-btn:hover:not(:disabled) {
+  background: var(--colorBrandBackgroundHover);
+}
+
+.download-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mobile-only {
+  display: none;
+}
 
 @media (max-width: 1024px) {
   .local-toolbar {
-    padding: 0.5rem 1rem;
-    gap: 0.5rem;
+    padding: 0 8px;
+    gap: 4px;
   }
-  
+
   .hide-mobile {
     display: none !important;
   }
-  
+
   .mobile-only {
-    display: flex;
+    display: inline;
   }
 
-  .view-toggle button {
-    padding: 0.45rem 0.75rem;
+  .toggle-btn {
+    padding: 6px 8px;
   }
 
-  .btn-primary {
-    padding: 0.6rem 1rem;
-    font-size: 0.85rem;
-  }
-
-  .global-actions {
-    gap: 0.5rem;
+  .download-btn,
+  .add-files-label {
+    padding: 6px 10px;
   }
 }
 </style>

@@ -1,25 +1,22 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { PDFDocument, degrees, StandardFonts, rgb, PDFImage } from 'pdf-lib'
 import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite'
 import { createWorker } from 'tesseract.js'
-import { FileUp, ChevronUp, ChevronDown, Settings, Lock, Zap } from 'lucide-vue-next'
 
 import type { PageInfo, LoadedFile, ToolType, ViewMode } from '../types'
 import Toolbar from './workspace/Toolbar.vue'
 import Canvas from './workspace/Canvas.vue'
 import SidebarSettings from './workspace/SidebarSettings.vue'
 
-// Setup PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker
 
 const props = defineProps<{
   activeTool: ToolType
 }>()
 
-// --- State ---
 const loadedFiles = ref<LoadedFile[]>([])
 const pages = ref<PageInfo[]>([])
 const isLoading = ref(false)
@@ -27,7 +24,6 @@ const viewMode = ref<ViewMode>('mosaic')
 const loadingCurrentPage = ref(0)
 const loadingTotalPages = ref(0)
 
-// OCR Specific
 const ocrEnabled = ref(false)
 const ocrLanguage = ref<'spa' | 'glg' | 'eng'>('spa')
 const isOcrRunning = ref(false)
@@ -35,18 +31,15 @@ const ocrProgress = ref(0)
 const ocrCurrentPage = ref(0)
 const ocrTotalPages = ref(0)
 
-// Split Specific
 const splitStrategy = ref<'range' | 'even-odd' | 'manual' | 'custom'>('range')
 const splitRange = ref(1)
 const customRanges = ref<{ start: number; end: number }[]>([{ start: 1, end: 1 }])
 
-// Numbering Specific
 const numberingEnabled = ref(false)
 const numberingPosition = ref('bottom-center')
 const numberingBgColor = ref('#3b82f6')
 const numberingTextColor = ref('#ffffff')
 
-// Watermark Specific
 const watermarkEnabled = ref(false)
 const watermarkType = ref<'text' | 'image'>('text')
 const watermarkText = ref('CONFIDENTIAL')
@@ -58,11 +51,9 @@ const watermarkOpacity = ref(0.3)
 const watermarkColor = ref('#000000')
 const watermarkSize = ref(50)
 
-// Protect Specific
 const protectEnabled = ref(false)
 const pdfPassword = ref('')
 
-// Unlock Specific
 const unlockEnabled = ref(false)
 const unlockPasswordInput = ref('')
 const bruteForceEnabled = ref(false)
@@ -71,16 +62,6 @@ const bruteForceStatus = ref('')
 
 const isMobileDrawerOpen = ref(false)
 
-// Auto-enable features
-watch(() => props.activeTool, (newTool) => {
-  if (newTool === 'numbering') numberingEnabled.value = true
-  if (newTool === 'watermark') watermarkEnabled.value = true
-  if (newTool === 'ocr') ocrEnabled.value = true
-  if (newTool === 'protect') protectEnabled.value = true
-  if (newTool === 'unlock') unlockEnabled.value = true
-})
-
-// --- Computed ---
 const sortedPages = computed(() => [...pages.value].sort((a, b) => a.order - b.order))
 const duplicateOrders = computed(() => {
   const counts: Record<number, number> = {}
@@ -88,7 +69,6 @@ const duplicateOrders = computed(() => {
   return new Set(pages.value.filter((p: PageInfo) => (counts[p.order] || 0) > 1).map((p: PageInfo) => p.id))
 })
 
-// --- Helpers ---
 const hexToRgb = (hex: string) => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return { r: 0, g: 0, b: 0 };
@@ -99,7 +79,6 @@ const hexToRgb = (hex: string) => {
   };
 }
 
-// --- Logic ---
 const onFileChange = async (e: Event) => {
   const target = e.target as HTMLInputElement
   if (target.files && target.files.length > 0) {
@@ -113,8 +92,6 @@ const onFileChange = async (e: Event) => {
       const fileIndex = loadedFiles.value.length
       loadedFiles.value.push({ name: file.name, arrayBuffer })
       
-      // If we are in unlock mode, we don't block if loading fails due to password
-      // We just keep the file in loadedFiles so the user can unlock it from settings
       await loadPagesFromFile(arrayBuffer, fileIndex)
     }
     isLoading.value = false
@@ -126,7 +103,6 @@ const loadPagesFromFile = async (buffer: ArrayBuffer, fileIndex: number, passwor
     const loadingTask = pdfjsLib.getDocument({ data: buffer.slice(0), password })
     const pdfDoc = await loadingTask.promise
     
-    // Store successful password for later export
     if (loadedFiles.value[fileIndex]) {
       loadedFiles.value[fileIndex].password = password
     }
@@ -180,7 +156,6 @@ const handleManualUnlock = async () => {
     const success = await loadPagesFromFile(file.arrayBuffer, loadedFiles.value.length - 1, unlockPasswordInput.value)
     if (!success) alert('Invalid password. Please try again.')
     else {
-      // Clear status if successful
       bruteForceStatus.value = ''
     }
   }
@@ -215,7 +190,6 @@ const startBruteForce = async () => {
         if (!isBruteForcing.value) break
         
         attempts++
-        // Update status and yield to UI every 5 attempts to prevent "toast"
         if (attempts % 5 === 0) {
           bruteForceStatus.value = `Trying: ${pwd} (${attempts} attempts)`
           await new Promise(r => setTimeout(r, 10)) 
@@ -225,17 +199,14 @@ const startBruteForce = async () => {
           const loadingTask = pdfjsLib.getDocument({ data: file.arrayBuffer.slice(0), password: pwd })
           const pdfDoc = await loadingTask.promise
           
-          // Success!
           unlockPasswordInput.value = pwd
           isBruteForcing.value = false
           bruteForceStatus.value = `Found: ${pwd}! Rendering pages...`
           
-          // Properly load the pages now
           await loadPagesFromFile(file.arrayBuffer, loadedFiles.value.length - 1, pwd)
           
           bruteForceStatus.value = `Unlocked successfully with password: ${pwd}`
           
-          // Cleanup PDF.js doc
           await pdfDoc.destroy()
           return
         } catch (e: any) {
@@ -316,28 +287,24 @@ const downloadPdf = async () => {
         
         if (!cache[pInfo.originalFileIndex]) {
           try {
-            // pdf-lib does not support password decryption, so we attempt a normal load
             cache[pInfo.originalFileIndex] = await PDFDocument.load(file.arrayBuffer)
           } catch (e) {
-            // If it fails (likely due to encryption), we set it to null to trigger image fallback
             cache[pInfo.originalFileIndex] = null as any
           }
         }
 
-        const srcDoc = cache[pInfo.originalFileIndex]
+        let srcDoc = cache[pInfo.originalFileIndex]
         let cp: any
         
         if (srcDoc) {
           try {
             [cp] = await doc.copyPages(srcDoc, [pInfo.originalPageIndex])
           } catch (e) {
-            // Fallback if copyPages fails on encrypted content
             srcDoc = null as any
           }
         }
 
         if (!srcDoc) {
-          // IMAGE FALLBACK: Recreate the page from the rendered image
           const imgBytes = await fetch(pInfo.dataUrl).then(r => r.arrayBuffer())
           const img = await doc.embedJpg(imgBytes)
           cp = doc.addPage([pInfo.width, pInfo.height])
@@ -348,7 +315,6 @@ const downloadPdf = async () => {
 
         const { width, height } = cp.getSize()
         
-        // Final orientation calculation
         const originalRotation = cp.getRotation ? cp.getRotation().angle : 0
         const totalRotation = (originalRotation + (pInfo.rotation || 0)) % 360
         const isRotated = totalRotation % 180 !== 0
@@ -362,7 +328,6 @@ const downloadPdf = async () => {
           return { x: vx, y: vy }
         }
 
-        // Apply Crop
         if (pInfo.crop && (pInfo.crop.width < 100 || pInfo.crop.height < 100 || pInfo.crop.x > 0 || pInfo.crop.y > 0)) {
           const cx = (pInfo.crop.x / 100) * width, cy = (pInfo.crop.y / 100) * height
           const cw = (pInfo.crop.width / 100) * width, ch = (pInfo.crop.height / 100) * height
@@ -425,7 +390,6 @@ const downloadPdf = async () => {
       }
       let bytes = await doc.save()
 
-      // Apply Protection if enabled
       if (protectEnabled.value && pdfPassword.value) {
         bytes = await encryptPDF(bytes, pdfPassword.value, pdfPassword.value)
       }
@@ -450,12 +414,21 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
         <div v-if="pages.length === 0" class="empty-state">
           <div class="upload-card">
             <input type="file" multiple @change="onFileChange" accept="application/pdf" id="pdf-upload" hidden />
-            <label for="pdf-upload" class="upload-area"><div class="icon-circle"><FileUp :size="40" /></div><h3>Upload PDF Files</h3><p>Select documents to start</p><span class="btn-secondary">Browse Files</span></label>
+            <label for="pdf-upload" class="upload-area">
+              <div class="icon-circle">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <h3>Upload PDF Files</h3>
+              <p>Select documents to start</p>
+              <fluent-button appearance="outline" class="browse-btn">Browse Files</fluent-button>
+            </label>
             
-            <div v-if="loadedFiles.length > 0 && props.activeTool === 'unlock'" class="locked-status" style="margin-top: 2rem; padding: 1rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 1rem; color: #92400e; font-size: 0.875rem;">
-              <Lock :size="20" style="margin-bottom: 0.5rem;" />
-              <p><strong>{{ loadedFiles[0].name }}</strong> is locked.</p>
-              <p>Use the settings on the right to unlock it.</p>
+            <div v-if="loadedFiles.length > 0 && props.activeTool === 'unlock'" class="locked-warning">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <div>
+                <p><strong>{{ loadedFiles[0]?.name }}</strong> is locked.</p>
+                <p class="locked-hint">Use the settings on the right to unlock it.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -470,19 +443,20 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
           @rotate="handleRotate" 
           @remove="handleRemove" 
           @move="handleMove" 
-          @update:crop="handleCropUpdate"
+          @update:crop="handleCropUpdate" 
+          @reorder="applyOrder" 
         />
       </div>
       <div v-if="pages.length > 0 || (loadedFiles.length > 0 && props.activeTool === 'unlock')" class="settings-drawer" :class="{ 'mobile-open': isMobileDrawerOpen }">
-        <button class="drawer-handle desktop-only" @click="isMobileDrawerOpen = !isMobileDrawerOpen">
-          <ChevronUp v-if="!isMobileDrawerOpen" :size="18" />
-          <ChevronDown v-else :size="18" />
-          {{ isMobileDrawerOpen ? 'Hide Settings' : 'Configure Tool' }}
-        </button>
+        <fluent-button appearance="subtle" class="drawer-handle desktop-only" @click="isMobileDrawerOpen = !isMobileDrawerOpen">
+          <span>{{ isMobileDrawerOpen ? 'Hide Settings' : 'Configure Tool' }}</span>
+        </fluent-button>
         <div class="drawer-scrollable">
           <div v-if="isMobileDrawerOpen" class="mobile-drawer-header mobile-only">
              <h3>Tool Settings</h3>
-             <button @click="isMobileDrawerOpen = false" class="btn-close-drawer"><ChevronDown :size="24" /></button>
+             <fluent-button appearance="subtle" @click="isMobileDrawerOpen = false">
+               <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4.28 3.22a.75.75 0 0 0-1.06 1.06L8.94 10l-5.72 5.72a.75.75 0 1 0 1.06 1.06L10 11.06l5.72 5.72a.75.75 0 1 0 1.06-1.06L11.06 10l5.72-5.72a.75.75 0 0 0-1.06-1.06L10 8.94 4.28 3.22Z"/></svg>
+             </fluent-button>
           </div>
           <SidebarSettings 
             :active-tool="activeTool" 
@@ -526,21 +500,20 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
       </div>
     </div>
 
-    <!-- Floating Action Button for Mobile Settings -->
-    <button v-if="pages.length > 0 && !isMobileDrawerOpen" class="fab-settings mobile-only" @click="isMobileDrawerOpen = true">
-      <Settings :size="24" />
-      <span>Settings</span>
-    </button>
+    <fluent-button v-if="pages.length > 0 && !isMobileDrawerOpen" appearance="primary" class="fab-settings mobile-only" @click="isMobileDrawerOpen = true">
+      <span>⚙ Settings</span>
+    </fluent-button>
+
     <div v-if="isLoading" class="loader-overlay">
       <div class="loader-content">
-        <div class="loader"></div>
+        <fluent-spinner />
         <div v-if="isOcrRunning" class="progress-info">
           <p>OCR Recognition: Page {{ ocrCurrentPage }} of {{ ocrTotalPages }}</p>
-          <div class="progress-container"><div class="progress-bar" :style="{ width: ocrProgress + '%' }"></div></div>
+          <fluent-progress-bar :value="ocrProgress" />
         </div>
         <div v-else-if="loadingTotalPages > 0" class="progress-info">
-          <p>Cargando páginas: {{ loadingCurrentPage }} de {{ loadingTotalPages }}</p>
-          <div class="progress-container"><div class="progress-bar" :style="{ width: (loadingCurrentPage / loadingTotalPages * 100) + '%' }"></div></div>
+          <p>Loading pages: {{ loadingCurrentPage }} of {{ loadingTotalPages }}</p>
+          <fluent-progress-bar :value="(loadingCurrentPage / loadingTotalPages * 100)" />
         </div>
         <p v-else>Processing PDF...</p>
       </div>
@@ -549,24 +522,24 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
 </template>
 
 <style scoped>
-.workspace { display: flex; flex-direction: column; height: 100%; background: #f8fafc; }
-.workspace-layout { flex: 1; display: flex; overflow: hidden; }
-
-@media (max-width: 1024px) {
-  .workspace-layout {
-    flex-direction: column;
-    overflow: hidden;
-  }
+.workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-.workspace-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.workspace-layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
 
-@media (max-width: 1024px) {
-  .workspace-main {
-    flex: 1;
-    height: auto;
-    border-bottom: none;
-  }
+.workspace-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
 .settings-drawer {
@@ -584,64 +557,177 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: var(--spacingVerticalM) var(--spacingHorizontalL);
+  border-bottom: 1px solid var(--colorNeutralStroke1);
 }
 
 .mobile-drawer-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 800;
-}
-
-.btn-close-drawer {
-  background: #f1f5f9;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  font-size: var(--fontSizeBase400);
+  font-weight: var(--fontWeightSemibold);
 }
 
 .fab-settings {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  background: #1e293b;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 3rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  bottom: 24px;
+  right: 24px;
+  border-radius: var(--borderRadiusLarge) !important;
   z-index: 500;
-  transition: all 0.2s;
+  box-shadow: var(--shadow16);
 }
 
-.fab-settings:active {
-  transform: scale(0.95);
+.empty-state {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacingHorizontalXXL);
+  overflow-y: auto;
+}
+
+.upload-card {
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  padding: var(--spacingVerticalXXXL);
+  background: var(--colorNeutralBackgroundCard);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusXLarge);
+}
+
+.upload-area {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.icon-circle {
+  width: 72px;
+  height: 72px;
+  background: var(--colorBrandBackground2);
+  color: var(--colorBrandForeground1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacingVerticalL);
+}
+
+.upload-area h3 {
+  font-size: var(--fontSizeBase400);
+  font-weight: var(--fontWeightSemibold);
+  margin-bottom: var(--spacingVerticalXS);
+}
+
+.upload-area p {
+  font-size: var(--fontSizeBase300);
+  color: var(--colorNeutralForeground2);
+  margin-bottom: var(--spacingVerticalL);
+}
+
+.browse-btn {
+  --button-height: 36px;
+}
+
+.locked-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacingHorizontalM);
+  margin-top: var(--spacingVerticalXL);
+  padding: var(--spacingVerticalM) var(--spacingHorizontalL);
+  background: var(--colorPaletteYellowBackground1);
+  border: 1px solid var(--colorPaletteYellowBorder1);
+  border-radius: var(--borderRadiusMedium);
+  font-size: var(--fontSizeBase200);
+  color: var(--colorNeutralForeground1);
+}
+
+.locked-warning p {
+  font-weight: var(--fontWeightMedium);
+}
+
+.locked-hint {
+  font-size: var(--fontSizeBase100);
+  color: var(--colorNeutralForeground2);
+  margin-top: var(--spacingVerticalXXS);
+}
+
+.loader-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  font-weight: var(--fontWeightMedium);
+  text-align: center;
+}
+
+.loader-content {
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacingVerticalM);
+}
+
+.progress-info {
+  width: 100%;
+}
+
+.progress-info p {
+  font-size: var(--fontSizeBase300);
+  margin-bottom: var(--spacingVerticalS);
+}
+
+.drawer-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacingHorizontalXS);
+  padding: var(--spacingVerticalS);
+  background: var(--colorNeutralBackground3);
+  border-bottom: 1px solid var(--colorNeutralStroke1);
+  width: 100%;
+  font-weight: var(--fontWeightSemibold);
+  font-size: var(--fontSizeBase200);
+  border-radius: 0;
+  --button-height: 36px;
+}
+
+.mobile-only {
+  display: none;
 }
 
 @media (max-width: 1024px) {
+  .workspace-layout {
+    flex-direction: column;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
   .settings-drawer {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
     height: 70vh;
-    background: white;
+    background: var(--colorNeutralBackground1);
     z-index: 1000;
     transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
-    border-top-left-radius: 1.5rem;
-    border-top-right-radius: 1.5rem;
+    transition: transform 0.25s ease;
+    border-top-left-radius: var(--borderRadiusXLarge);
+    border-top-right-radius: var(--borderRadiusXLarge);
+    box-shadow: var(--shadow28);
   }
 
   .settings-drawer.mobile-open {
@@ -652,45 +738,4 @@ const reset = () => { if (confirm('Clear all pages?')) { pages.value = []; loade
     display: none;
   }
 }
-
-.mobile-only { display: none; }
-.desktop-only { display: inline-flex; }
-
-@media (max-width: 1024px) {
-  .mobile-only { display: flex; }
-  .desktop-only { display: none; }
-}
-
-@media (min-width: 1025px) {
-  .drawer-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    background: #f8fafc;
-    border: none;
-    border-bottom: 1px solid #e2e8f0;
-    width: 100%;
-    font-weight: 800;
-    color: #475569;
-    border-top-left-radius: 1.5rem;
-    border-top-right-radius: 1.5rem;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-}
-
-.empty-state { height: 100%; display: flex; align-items: center; justify-content: center; padding: 2rem; overflow-y: auto; }
-.upload-card { background: white; padding: 3rem; border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
-.upload-area { cursor: pointer; display: flex; flex-direction: column; align-items: center; }
-.icon-circle { width: 70px; height: 70px; background: #eff6ff; color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
-.btn-secondary { background: white; color: #1e293b; border: 1px solid #e2e8f0; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
-.loader-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; font-weight: 600; color: #1e293b; text-align: center; }
-.loader-content { width: 100%; max-width: 300px; display: flex; flex-direction: column; align-items: center; }
-.progress-info { width: 100%; margin-top: 1rem; }
-.progress-container { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
-.progress-bar { height: 100%; background: #3b82f6; transition: width 0.3s ease; }
-.loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>

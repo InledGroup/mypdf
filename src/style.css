@@ -1,12 +1,15 @@
-/* Reset and base styles */
-* {
+*, *::before, *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html, body {
   height: 100%;
-  margin: 0;
-  padding: 0;
+  font-family: var(--fontFamilyBase, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  background: var(--colorNeutralBackground1, #fafafa);
+  color: var(--colorNeutralForeground1, #242424);
 }
 
 #app {

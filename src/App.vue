@@ -1,8 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import {
+  ArrowUpDown,
+  RotateCw,
+  Crop,
+  Combine,
+  Scissors,
+  Binary,
+  Stamp,
+  ScanText,
+  Lock,
+  Unlock,
+  ArrowLeft,
+  Menu
+} from 'lucide-vue-next'
 import Landing from './components/Landing.vue'
 import PDFWorkspace from './components/PDFWorkspace.vue'
-import { LayoutGrid, RotateCcw, FileStack, Home, Type, Scissors, Hash, Stamp, Crop, Lock, LockOpen, Menu, X } from 'lucide-vue-next'
 
 const currentView = ref<'landing' | 'workspace'>('landing')
 const activeTool = ref<'reorder' | 'rotate' | 'merge' | 'ocr' | 'split' | 'numbering' | 'watermark' | 'crop' | 'protect' | 'unlock'>('reorder')
@@ -14,130 +27,158 @@ const setView = (view: 'landing' | 'workspace', tool: 'reorder' | 'rotate' | 'me
   isMobileMenuOpen.value = false
 }
 
-const toggleMobileMenu = () => {
-  isMobileMenuOpen.value = !isMobileMenuOpen.value
-}
-
 const selectTool = (tool: any) => {
   activeTool.value = tool
   isMobileMenuOpen.value = false
 }
+
+const tools = [
+  { id: 'reorder' as const, label: 'Reorder', icon: ArrowUpDown },
+  { id: 'rotate' as const, label: 'Rotate', icon: RotateCw },
+  { id: 'crop' as const, label: 'Crop', icon: Crop },
+  { id: 'merge' as const, label: 'Merge', icon: Combine },
+  { id: 'split' as const, label: 'Split', icon: Scissors },
+  { id: 'numbering' as const, label: 'Numbering', icon: Binary },
+  { id: 'watermark' as const, label: 'Watermark', icon: Stamp },
+  { id: 'ocr' as const, label: 'OCR', icon: ScanText },
+  { id: 'protect' as const, label: 'Protect', icon: Lock },
+  { id: 'unlock' as const, label: 'Unlock', icon: Unlock },
+]
 </script>
 
 <template>
-  <div class="app-container">
-    <header v-if="currentView === 'workspace'" class="mobile-header">
-      <div class="sidebar-logo" @click="setView('landing')">
-        <span class="logo-text">MY<span class="logo-highlight">PDF</span></span>
+  <div class="app-shell">
+    <aside v-if="currentView === 'workspace'" class="nav-sidebar" :class="{ open: isMobileMenuOpen }">
+      <div class="nav-brand" @click="setView('landing')">
+        <img src="https://hosted.inled.es/MYPDF.png" alt="MyPDF" class="brand-logo" />
       </div>
-      <button class="menu-toggle" @click="toggleMobileMenu">
-        <Menu v-if="!isMobileMenuOpen" :size="24" />
-        <X v-else :size="24" />
-      </button>
-    </header>
 
-    <div v-if="isMobileMenuOpen && currentView === 'workspace'" class="mobile-overlay" @click="isMobileMenuOpen = false"></div>
+      <fluent-divider style="margin: 8px 0;"></fluent-divider>
 
-    <aside v-if="currentView === 'workspace'" class="sidebar" :class="{ 'mobile-open': isMobileMenuOpen }">
-      <div class="sidebar-logo desktop-only" @click="setView('landing')">
-        <span class="logo-text">MY<span class="logo-highlight">PDF</span></span>
-      </div>
-      
-      <nav class="sidebar-nav">
-        <button :class="{ active: activeTool === 'reorder' }" @click="selectTool('reorder')">
-          <LayoutGrid :size="20" /> Reorder
-        </button>
-        <button :class="{ active: activeTool === 'rotate' }" @click="selectTool('rotate')">
-          <RotateCcw :size="20" /> Rotate
-        </button>
-        <button :class="{ active: activeTool === 'crop' }" @click="selectTool('crop')">
-          <Crop :size="20" /> Crop
-        </button>
-        <button :class="{ active: activeTool === 'merge' }" @click="selectTool('merge')">
-          <FileStack :size="20" /> Merge
-        </button>
-        <button :class="{ active: activeTool === 'split' }" @click="selectTool('split')">
-          <Scissors :size="20" /> Split
-        </button>
-        <button :class="{ active: activeTool === 'numbering' }" @click="selectTool('numbering')">
-          <Hash :size="20" /> Numbering
-        </button>
-        <button :class="{ active: activeTool === 'watermark' }" @click="selectTool('watermark')">
-          <Stamp :size="20" /> Watermark
-        </button>
-        <button :class="{ active: activeTool === 'ocr' }" @click="selectTool('ocr')">
-          <Type :size="20" /> OCR
-        </button>
-        <button :class="{ active: activeTool === 'protect' }" @click="selectTool('protect')">
-          <Lock :size="20" /> Protect
-        </button>
-        <button :class="{ active: activeTool === 'unlock' }" @click="selectTool('unlock')">
-          <LockOpen :size="20" /> Unlock
+      <nav class="nav-items">
+        <button
+          v-for="tool in tools"
+          :key="tool.id"
+          :class="['nav-item', { 'nav-item--active': activeTool === tool.id }]"
+          @click="selectTool(tool.id)"
+        >
+          <component :is="tool.icon" class="nav-icon-svg" :size="16" />
+          {{ tool.label }}
         </button>
       </nav>
 
-      <div class="sidebar-footer">
-        <button @click="setView('landing')" class="btn-home">
-          <Home :size="20" /> Exit Tool
-        </button>
-      </div>
+      <fluent-divider style="margin: 8px 0;"></fluent-divider>
+
+      <button class="nav-item nav-item--back" @click="setView('landing')">
+        <ArrowLeft class="nav-icon-svg" :size="16" />
+        Back to Home
+      </button>
     </aside>
 
-    <div class="main-content">
-      <header v-if="currentView === 'landing'" class="app-header">
-        <div class="logo" @click="setView('landing')">
-          <span class="logo-text">MY<span class="logo-highlight">PDF</span></span>
-        </div>
-      </header>
+    <div v-if="isMobileMenuOpen && currentView === 'workspace'" class="mobile-overlay" @click="isMobileMenuOpen = false"></div>
 
-      <main :class="{ 'full-page': currentView === 'landing' }">
-        <div v-if="currentView === 'landing'" class="full-page-container">
-          <Landing @select-tool="(tool) => setView('workspace', tool)" />
-        </div>
-        <PDFWorkspace v-else :active-tool="activeTool" />
-      </main>
-    </div>
+    <header v-if="currentView === 'workspace'" class="mobile-bar">
+      <div class="nav-brand" @click="setView('landing')">
+        <img src="https://hosted.inled.es/MYPDF.png" alt="MyPDF" class="brand-logo" />
+      </div>
+      <button class="hamburger-btn" @click="isMobileMenuOpen = !isMobileMenuOpen">
+        <Menu :size="20" />
+      </button>
+    </header>
+
+    <main class="main-area">
+      <Landing v-if="currentView === 'landing'" @select-tool="(t) => setView('workspace', t)" />
+      <PDFWorkspace v-else :active-tool="activeTool" />
+    </main>
   </div>
 </template>
 
 <style>
-:root {
-  --primary: #3b82f6;
-  --primary-light: #eff6ff;
-  --bg-app: #f8fafc;
-  --sidebar-bg: #1e293b;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --card-bg: #ffffff;
-}
-
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg-app);
-  color: var(--text-main);
-  overflow: hidden;
-}
-
-.app-container {
+.app-shell {
   display: flex;
   height: 100vh;
-  width: 100vw;
+  background: var(--colorNeutralBackground1);
 }
 
-/* Sidebar Styles */
-.sidebar {
-  width: 260px;
-  background: var(--sidebar-bg);
-  color: white;
+.nav-sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--colorNeutralBackground3);
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
-  z-index: 100;
-  transition: all 0.3s ease;
+  padding: 12px 8px;
+  gap: 2px;
+  border-right: 1px solid var(--colorNeutralStroke1);
 }
 
-.mobile-header {
+.nav-brand {
+  display: flex;
+  align-items: center;
+  padding: 12px 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.brand-logo {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+}
+
+.nav-items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--borderRadiusMedium);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fontSizeBase300);
+  font-weight: var(--fontWeightRegular);
+  color: var(--colorNeutralForeground1);
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.nav-item:hover {
+  background: var(--colorNeutralBackground1Hover);
+}
+
+.nav-item--active {
+  background: var(--colorBrandBackground2);
+  color: var(--colorBrandForeground1);
+  font-weight: var(--fontWeightSemibold);
+}
+
+.nav-item--active:hover {
+  background: var(--colorBrandBackground2Hover);
+}
+
+.nav-item--back {
+  color: var(--colorNeutralForeground2);
+  font-size: var(--fontSizeBase200);
+}
+
+.nav-icon-svg {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-bar {
   display: none;
 }
 
@@ -145,51 +186,53 @@ body {
   display: none;
 }
 
-@media (max-width: 1024px) {
-  .app-container {
-    flex-direction: column;
-  }
+.hamburger-btn {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--colorNeutralForeground1);
+  border-radius: var(--borderRadiusMedium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .mobile-header {
+.hamburger-btn:hover {
+  background: var(--colorNeutralBackground1Hover);
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .mobile-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background: var(--sidebar-bg);
-    color: white;
-    z-index: 110;
-    position: sticky;
-    top: 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 8px 16px;
+    background: var(--colorNeutralBackground3);
+    border-bottom: 1px solid var(--colorNeutralStroke1);
+    height: 52px;
+    flex-shrink: 0;
   }
 
-  .mobile-header .sidebar-logo {
-    margin-bottom: 0;
-    padding-left: 0;
-  }
-
-  .menu-toggle {
-    background: transparent;
-    border: none;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .sidebar {
+  .nav-sidebar {
     position: fixed;
     top: 0;
-    left: -100%;
-    width: 280px;
+    left: -240px;
+    width: 240px;
     height: 100vh;
-    padding-top: 5rem;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.3);
-    z-index: 105;
+    z-index: 1000;
+    transition: left 0.2s ease;
+    box-shadow: var(--shadow28);
   }
 
-  .sidebar.mobile-open {
+  .nav-sidebar.open {
     left: 0;
   }
 
@@ -197,148 +240,12 @@ body {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 102;
+    background: var(--colorBackgroundOverlay);
+    z-index: 999;
   }
 
-  .desktop-only {
-    display: none;
+  .main-area {
+    height: calc(100vh - 52px);
   }
-
-  .sidebar-nav {
-    flex-direction: column;
-    overflow-y: auto;
-    padding-bottom: 2rem;
-  }
-
-  .sidebar-nav button {
-    padding: 0.85rem 1.25rem;
-    font-size: 1rem;
-    width: 100%;
-    justify-content: flex-start;
-    flex-direction: row;
-    min-width: unset;
-    gap: 0.75rem;
-  }
-  
-  .sidebar-nav button svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .sidebar-footer {
-    display: block;
-    margin-top: auto;
-    padding: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-}
-
-.sidebar-logo {
-  cursor: pointer;
-  font-weight: 800;
-  font-size: 1.5rem;
-  margin-bottom: 3rem;
-  padding-left: 0.5rem;
-}
-
-.sidebar-nav {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.sidebar-nav button {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-weight: 500;
-  width: 100%;
-  text-align: left;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.sidebar-nav button:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-}
-
-.sidebar-nav button.active {
-  background: var(--primary);
-  color: white;
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.btn-home {
-  width: 100%;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 0.75rem;
-  border-radius: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-/* Main Content Styles */
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-}
-
-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.app-header {
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 1rem 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
-
-.full-page {
-  width: 100%;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.full-page-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-  width: 100%;
-}
-
-.logo {
-  font-weight: 800;
-  font-size: 1.5rem;
-}
-
-.logo-highlight {
-  color: var(--primary);
 }
 </style>

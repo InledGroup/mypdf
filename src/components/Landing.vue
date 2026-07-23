@@ -1,491 +1,496 @@
 <script setup lang="ts">
-import { 
-  LayoutGrid, RotateCcw, FileStack, CheckCircle, Type, 
-  Scissors, Hash, Stamp, Crop, ShieldCheck, WifiOff, 
-  Zap, Lock, LockOpen, ServerOff, Check, X, MousePointerClick, Github
+import { ref, computed } from 'vue'
+import {
+  ArrowUpDown,
+  RotateCw,
+  Crop,
+  Combine,
+  Scissors,
+  Binary,
+  Stamp,
+  ScanText,
+  Lock,
+  Unlock,
+  ChevronRight,
+  Shield,
+  FileCode2,
+  X
 } from 'lucide-vue-next'
 
+// Reference template-only icon component to satisfy TS6133
+Shield;
+
 defineEmits(['select-tool'])
+
+const tools = [
+  { id: 'reorder', title: 'Reorder', desc: 'Visually rearrange the order of pages.', icon: ArrowUpDown },
+  { id: 'rotate', title: 'Rotate', desc: 'Fix page orientation.', icon: RotateCw },
+  { id: 'crop', title: 'Crop', desc: 'Adjust margins and remove white borders.', icon: Crop },
+  { id: 'merge', title: 'Merge', desc: 'Combine multiple PDFs into a single file.', icon: Combine },
+  { id: 'split', title: 'Split', desc: 'Extract pages or divide documents.', icon: Scissors },
+  { id: 'numbering', title: 'Page Numbers', desc: 'Add page numbers with style control.', icon: Binary },
+  { id: 'watermark', title: 'Watermark', desc: 'Add text or image watermarks.', icon: Stamp },
+  { id: 'ocr', title: 'OCR Text', desc: 'Convert images into selectable text.', icon: ScanText },
+  { id: 'protect', title: 'Protect PDF', desc: 'Encrypt document with password.', icon: Lock },
+  { id: 'unlock', title: 'Unlock PDF', desc: 'Remove password protection.', icon: Unlock },
+]
+
+const activeModal = ref<'privacy' | 'terms' | 'cookies' | null>(null)
+
+const modalTitle = computed(() => {
+  if (activeModal.value === 'privacy') return 'Privacy Policy'
+  if (activeModal.value === 'terms') return 'Terms of Use'
+  if (activeModal.value === 'cookies') return 'Cookie Policy'
+  return ''
+})
 </script>
 
 <template>
-  <div class="landing">
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="badge-privacy">
-        <ShieldCheck :size="16" />
-        <span>100% Privacy Guaranteed</span>
-      </div>
-      <h1>Your PDF Never Leaves Your Device</h1>
-      <p class="hero-subtitle">
-        Unlike other tools, MyPDF processes everything <strong>locally in your browser</strong>. 
-        Your documents are never uploaded to any server.
-      </p>
+  <div class="landing-page">
 
-      <div class="hero-actions">
-        <a href="https://github.com/InledGroup/mypdf" target="_blank" class="btn-github">
-          <Github :size="20" /> Audit Code on GitHub
+    <!-- ── Hero ── -->
+    <section class="hero-section">
+      <div class="logo-container">
+        <img src="https://hosted.inled.es/MYPDF.png" alt="MyPDF Logo" class="landing-logo" />
+      </div>
+
+      <h1 class="hero-title">PDF tools that don't upload anything, they are private</h1>
+      <p class="hero-subtitle">
+        In today's world, most PDF tools do business through AD's but also through your PDF's. We cannot know what they do with the PDF once they upload it to their servers. MyPDF is different: everything runs in your browser, with technology that doesn't upload anything to any servers. Try loading a tool and turning off the Wifi, it should work.
+      </p>
+    </section>
+
+    <!-- ── Tools Grid ── -->
+    <section class="tools-section">
+      <div class="tools-grid">
+        <button
+          v-for="tool in tools"
+          :key="tool.id"
+          class="tool-card"
+          @click="$emit('select-tool', tool.id)"
+        >
+          <div class="tool-icon">
+            <component :is="tool.icon" :size="18" />
+          </div>
+          <div class="tool-text">
+            <span class="tool-title">{{ tool.title }}</span>
+            <span class="tool-desc">{{ tool.desc }}</span>
+          </div>
+          <ChevronRight class="tool-chevron" :size="16" />
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Contribution Callout ── -->
+    <section class="contribute-section">
+      <div class="contribute-card">
+        <div class="contribute-icon">
+          <FileCode2 :size="20" />
+        </div>
+        <div class="contribute-content">
+          <h3>Help Us Improve MyPDF</h3>
+          <p>MyPDF is an open-source project. You can report bugs, request features, or contribute code directly on GitHub.</p>
+        </div>
+        <a href="https://github.com/InledGroup/mypdf" target="_blank" class="contribute-btn">
+          <span>Contribute on GitHub</span>
+          <ChevronRight :size="16" />
         </a>
       </div>
-      
-      <div class="offline-challenge">
-        <div class="offline-icon">
-          <WifiOff :size="24" />
-        </div>
-        <div class="offline-text">
-          <strong>The Ultimate Privacy Test:</strong>
-          <span>Turn off your Wi-Fi right now. The tool will keep working perfectly.</span>
-        </div>
-      </div>
     </section>
 
-    <!-- Tools Grid -->
-    <section class="tools-section">
-      <div class="section-header">
-        <h2>Professional Tools</h2>
-        <p>Select a tool to start or simply drag a PDF into the workspace.</p>
-      </div>
-      
-      <div class="tools-grid">
-        <div class="tool-card active" @click="$emit('select-tool', 'reorder')">
-          <div class="tool-icon"><LayoutGrid :size="24" /></div>
-          <h3>Reorder</h3>
-          <p>Visually change the order of pages.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'rotate')">
-          <div class="tool-icon"><RotateCcw :size="24" /></div>
-          <h3>Rotate</h3>
-          <p>Fix orientation for individual pages.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'crop')">
-          <div class="tool-icon"><Crop :size="24" /></div>
-          <h3>Crop</h3>
-          <p>Adjust margins or remove white borders.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'merge')">
-          <div class="tool-icon"><FileStack :size="24" /></div>
-          <h3>Merge / Combine</h3>
-          <p>Combine multiple documents into one.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'split')">
-          <div class="tool-icon"><Scissors :size="24" /></div>
-          <h3>Split</h3>
-          <p>Extract pages or split large files.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'numbering')">
-          <div class="tool-icon"><Hash :size="24" /></div>
-          <h3>Page Numbers</h3>
-          <p>Add custom page numbering.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'watermark')">
-          <div class="tool-icon"><Stamp :size="24" /></div>
-          <h3>Watermark</h3>
-          <p>Protect PDFs with text or logos.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'ocr')">
-          <div class="tool-icon"><Type :size="24" /></div>
-          <h3>OCR Text</h3>
-          <p>Convert scans into searchable text.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'protect')">
-          <div class="tool-icon"><Lock :size="24" /></div>
-          <h3>Protect PDF</h3>
-          <p>Add a password to your PDF document.</p>
-        </div>
-
-        <div class="tool-card active" @click="$emit('select-tool', 'unlock')">
-          <div class="tool-icon"><LockOpen :size="24" /></div>
-          <h3>Unlock PDF</h3>
-          <p>Remove password or change it.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Comparison Table -->
-    <section class="comparison-section">
-      <h2>Why Choose MyPDF?</h2>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Feature</th>
-              <th class="col-highlight">MyPDF (Local)</th>
-              <th>iLovePDF / Others</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>File Privacy</td>
-              <td><div class="cell-content"><Check class="icon-check" /> 100% Private (On your PC)</div></td>
-              <td><div class="cell-content"><X class="icon-x" /> Uploaded to the cloud</div></td>
-            </tr>
-            <tr>
-              <td>Offline Mode</td>
-              <td><div class="cell-content"><Check class="icon-check" /> Works without Internet</div></td>
-              <td><div class="cell-content"><X class="icon-x" /> Connection required</div></td>
-            </tr>
-            <tr>
-              <td>File Limits</td>
-              <td><div class="cell-content"><Check class="icon-check" /> No limits (Unlimited)</div></td>
-              <td><div class="cell-content"><X class="icon-x" /> Limited per task/day</div></td>
-            </tr>
-            <tr>
-              <td>Speed</td>
-              <td><div class="cell-content"><Check class="icon-check" /> Instant (No uploads)</div></td>
-              <td><div class="cell-content"><Zap :size="16" /> Depends on bandwidth</div></td>
-            </tr>
-            <tr>
-              <td>Workflow</td>
-              <td><div class="cell-content"><Check class="icon-check" /> Unified Workspace</div></td>
-              <td><div class="cell-content"><X class="icon-x" /> Disconnected tools</div></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Unified Workspace Explanation -->
-    <section class="workspace-promo">
-      <div class="promo-content">
-        <div class="promo-text">
-          <h2>Fluid Editing, No More Tab Hopping</h2>
-          <p>
-            Traditional sites force you to 'Rotate', download, then go to 'Merge', upload again... 
-            <strong>It's a waste of time.</strong>
-          </p>
-          <div class="promo-features">
-            <div class="p-feature">
-              <div class="p-icon"><MousePointerClick :size="20" /></div>
-              <span>Drag, rotate, and reorder everything in a single canvas.</span>
-            </div>
-            <div class="p-feature">
-              <div class="p-icon"><Zap :size="20" /></div>
-              <span>Apply multiple changes and export just once.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
+    <!-- ── Footer ── -->
     <footer class="landing-footer">
-      <div class="trust-icons">
-        <div class="trust-item"><Lock :size="16" /> Local Processing</div>
-        <div class="trust-item"><ServerOff :size="16" /> No Servers Involved</div>
-        <div class="trust-item"><CheckCircle :size="16" /> Open Source</div>
+      <fluent-divider></fluent-divider>
+      <div class="footer-items">
+        <button class="footer-link" @click="activeModal = 'privacy'">Privacy Policy</button>
+        <button class="footer-link" @click="activeModal = 'terms'">Terms of Use</button>
+        <button class="footer-link" @click="activeModal = 'cookies'">Cookie Policy</button>
+        <a href="https://github.com/InledGroup/mypdf" target="_blank" class="footer-link">GitHub Project</a>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-copy">Made by Inled Group · inled.es</span>
       </div>
     </footer>
+
+    <!-- ── Modal Overlay ── -->
+    <div v-if="activeModal" class="modal-overlay" @click="activeModal = null">
+      <div class="modal-card" @click.stop>
+        <div class="modal-header">
+          <h3>{{ modalTitle }}</h3>
+          <button class="modal-close" @click="activeModal = null">
+            <X :size="16" />
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Privacy Policy Content -->
+          <div v-if="activeModal === 'privacy'" class="policy-text">
+            <p>All the PDFs you open in PDF are saved in your computer's memory, within the browser, so you can manipulate them. They are not uploaded to any server.</p>
+            
+          </div>
+          
+          <!-- Terms Content -->
+          <div v-else-if="activeModal === 'terms'" class="policy-text">
+            <p>When you use MyPDF you release us from any responsibility for any problems with any document you process. You understand that you are solely responsible for complying with law and order in the country in which you are located.</p>
+          </div>
+          
+          <!-- Cookies Content -->
+          <div v-else-if="activeModal === 'cookies'" class="policy-text">
+            <p>We don't use cookies to track or analytics or any other anti-privacy thing.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <fluent-button appearance="primary" @click="activeModal = null">Close</fluent-button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <style scoped>
-.landing {
-  padding: 2rem 0 4rem 0;
+.landing-page {
+  overflow-y: auto;
+  height: 100%;
+  padding: 60px 40px;
+  max-width: 900px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 4rem;
+  gap: 40px;
 }
 
-/* Hero Section */
-.hero {
+/* ── Hero ── */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  max-width: 800px;
+  gap: 16px;
+  max-width: 680px;
   margin: 0 auto;
 }
 
-.badge-privacy {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #dcfce7;
-  color: #166534;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
+.logo-container {
+  margin-bottom: 8px;
 }
 
-.hero h1 {
-  font-size: 4rem;
-  font-weight: 900;
-  line-height: 1.1;
-  color: #0f172a;
-  margin-bottom: 1.5rem;
-  letter-spacing: -0.04em;
+.landing-logo {
+  height: 48px;
+  width: auto;
 }
 
-.hero-actions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 3rem;
-}
-
-.btn-github {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: #ffffff;
-  color: #1e293b;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  font-weight: 700;
-  text-decoration: none;
-  border: 1px solid #e2e8f0;
-  transition: all 0.2s;
-}
-
-.btn-github:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+.hero-title {
+  font-size: clamp(26px, 3.5vw, 38px);
+  font-weight: var(--fontWeightBold);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--colorNeutralForeground1);
 }
 
 .hero-subtitle {
-  font-size: 1.5rem;
-  color: #475569;
+  font-size: var(--fontSizeBase400);
+  color: var(--colorNeutralForeground2);
   line-height: 1.5;
-  margin-bottom: 2.5rem;
 }
 
-.offline-challenge {
-  display: flex;
+.notice-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 1.5rem;
-  background: #1e293b;
-  color: white;
-  padding: 1.5rem 2rem;
-  border-radius: 1.25rem;
-  text-align: left;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  gap: 6px;
+  background: var(--colorNeutralBackground3);
+  border: 1px solid var(--colorNeutralStroke1);
+  color: var(--colorNeutralForeground2);
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightSemibold);
+  padding: 4px 10px;
+  border-radius: var(--borderRadiusSmall);
 }
 
-.offline-icon {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 1rem;
-  border-radius: 1rem;
-  color: #60a5fa;
-}
-
-.offline-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.offline-text strong {
-  font-size: 1.125rem;
-  margin-bottom: 0.25rem;
-}
-
-.offline-text span {
-  color: #94a3b8;
-  font-size: 0.95rem;
-}
-
-/* Comparison Table */
-.comparison-section h2 {
-  text-align: center;
-  font-size: 2.25rem;
-  font-weight: 800;
-  margin-bottom: 3rem;
-}
-
-.table-container {
-  background: white;
-  border-radius: 1.5rem;
-  border: 1px solid #e2e8f0;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  padding: 1.5rem;
-  text-align: left;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-th {
-  background: #f8fafc;
-  font-weight: 700;
-  color: #475569;
-}
-
-.col-highlight {
-  background: #eff6ff;
-  color: var(--primary);
-}
-
-.cell-content {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-weight: 500;
-}
-
-.icon-check {
-  color: #10b981;
-}
-
-.icon-x {
-  color: #ef4444;
-}
-
-/* Workspace Promo */
-.workspace-promo {
-  background: #f1f5f9;
-  border-radius: 2rem;
-  padding: 4rem;
-  text-align: center;
-}
-
-.promo-content {
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.promo-text h2 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-bottom: 1.5rem;
-}
-
-.promo-text p {
-  font-size: 1.25rem;
-  color: #475569;
-  margin-bottom: 3rem;
-  line-height: 1.6;
-}
-
-.promo-features {
-  display: flex;
-  justify-content: center;
-  gap: 3rem;
-}
-
-.p-feature {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  font-weight: 600;
-  color: #1e293b;
-  flex: 1;
-}
-
-.p-icon {
-  background: white;
-  padding: 1rem;
-  border-radius: 1rem;
-  color: var(--primary);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-/* Tools Grid */
+/* ── Tools Grid ── */
 .tools-section {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
-}
-
-.section-header {
-  text-align: center;
-}
-
-.section-header h2 {
-  font-size: 2.25rem;
-  font-weight: 800;
-  margin-bottom: 0.5rem;
-}
-
-.section-header p {
-  color: var(--text-muted);
+  width: 100%;
 }
 
 .tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
 }
 
 .tool-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 1.25rem;
-  border: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--colorNeutralBackground1);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
   cursor: pointer;
+  text-align: left;
+  transition: border-color 0.1s, background 0.1s;
+  font-family: inherit;
+  color: var(--colorNeutralForeground1);
 }
 
 .tool-card:hover {
-  border-color: var(--primary);
-  transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  background: var(--colorNeutralBackground3);
+  border-color: var(--colorNeutralStroke1Hover);
+}
+
+.tool-card:hover .tool-chevron {
+  opacity: 1;
 }
 
 .tool-icon {
-  background: #eff6ff;
-  color: var(--primary);
-  width: 48px;
-  height: 48px;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.75rem;
-  margin-bottom: 1.25rem;
+  background: var(--colorBrandBackground2);
+  color: var(--colorBrandForeground1);
+  border-radius: var(--borderRadiusSmall);
 }
 
-.tool-card h3 {
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+.tool-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
-.tool-card p {
-  font-size: 0.875rem;
-  color: #64748b;
+.tool-title {
+  font-size: var(--fontSizeBase300);
+  font-weight: var(--fontWeightSemibold);
+  white-space: nowrap;
+}
+
+.tool-desc {
+  font-size: var(--fontSizeBase200);
+  color: var(--colorNeutralForeground2);
+  line-height: 1.3;
+}
+
+.tool-chevron {
+  flex-shrink: 0;
+  color: var(--colorNeutralForeground3);
+  opacity: 0.3;
+  transition: opacity 0.1s;
+}
+
+/* ── Contribute ── */
+.contribute-section {
+  width: 100%;
+}
+
+.contribute-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--colorNeutralBackground3);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
+}
+
+.contribute-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--colorNeutralBackground1);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusSmall);
+  color: var(--colorBrandForeground1);
+}
+
+.contribute-content {
+  flex: 1;
+}
+
+.contribute-content h3 {
+  font-size: var(--fontSizeBase400);
+  font-weight: var(--fontWeightSemibold);
+  margin-bottom: 4px;
+}
+
+.contribute-content p {
+  font-size: var(--fontSizeBase200);
+  color: var(--colorNeutralForeground2);
+  line-height: 1.4;
+}
+
+.contribute-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--colorBrandBackground);
+  color: var(--colorNeutralForegroundOnBrand);
+  border-radius: var(--borderRadiusMedium);
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightSemibold);
+  text-decoration: none;
+  transition: background 0.1s;
+}
+
+.contribute-btn:hover {
+  background: var(--colorBrandBackgroundHover);
+}
+
+/* ── Footer ── */
+.landing-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: auto;
+}
+
+.footer-items {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.footer-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fontSizeBase200);
+  color: var(--colorNeutralForeground3);
+  text-decoration: none;
+  transition: color 0.1s;
+}
+
+.footer-link:hover {
+  color: var(--colorBrandForeground1);
+}
+
+.footer-bottom {
+  text-align: center;
+}
+
+.footer-copy {
+  font-size: var(--fontSizeBase200);
+  color: var(--colorNeutralForeground4);
+}
+
+/* ── Modal Overlay ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--colorBackgroundOverlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 500px;
+  background: var(--colorNeutralBackground1);
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
+  box-shadow: var(--shadow28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 20px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--colorNeutralStroke1);
+}
+
+.modal-header h3 {
+  font-size: var(--fontSizeBase500);
+  font-weight: var(--fontWeightSemibold);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  border-radius: var(--borderRadiusSmall);
+  cursor: pointer;
+  color: var(--colorNeutralForeground2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: var(--colorNeutralBackground3);
+  color: var(--colorNeutralForeground1);
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.policy-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.policy-text h4 {
+  font-size: var(--fontSizeBase300);
+  font-weight: var(--fontWeightSemibold);
+  margin-top: 8px;
+}
+
+.policy-text h4:first-of-type {
+  margin-top: 0;
+}
+
+.policy-text p {
+  font-size: var(--fontSizeBase200);
+  color: var(--colorNeutralForeground2);
   line-height: 1.5;
 }
 
-/* Footer */
-.landing-footer {
-  border-top: 1px solid #e2e8f0;
-  padding-top: 2rem;
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--colorNeutralStroke1);
   display: flex;
-  justify-content: center;
-}
-
-.trust-icons {
-  display: flex;
-  gap: 2rem;
-  color: #94a3b8;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.trust-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 @media (max-width: 768px) {
-  .hero h1 { font-size: 2.5rem; }
-  .workspace-promo { padding: 2rem; }
-  .promo-features { flex-direction: column; gap: 2rem; }
-  .trust-icons { flex-direction: column; gap: 1rem; align-items: center; }
+  .landing-page {
+    padding: 30px 20px;
+    gap: 30px;
+  }
+
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contribute-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .contribute-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>

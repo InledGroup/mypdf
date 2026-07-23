@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RotateCcw, RotateCw, Trash2, Crop as CropIcon } from 'lucide-vue-next'
+import { RotateCcw, RotateCw, Trash2 } from 'lucide-vue-next'
 import type { PageInfo, ToolType } from '../../types'
 import { ref, watch } from 'vue'
 
@@ -16,29 +16,27 @@ const props = defineProps<{
 const emit = defineEmits(['rotate', 'remove', 'move', 'update:targetPagePos', 'update:crop'])
 
 const getGroupColor = (g?: number) => {
-  if (!g) return '#e2e8f0'
-  const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6']
+  if (!g) return 'var(--colorNeutralStroke1)'
+  const colors = ['#0078d4', '#d13438', '#0f7b0f', '#ca5010', '#8764b8', '#e3008c', '#00b294', '#ff8c00', '#5c2d91', '#008272']
   return colors[(g - 1) % colors.length]
 }
 
 const getPreviewPosStyle = (pos: string) => {
   const [v, h] = pos.split('-')
   const style: any = { position: 'absolute' }
-  if (v === 'top') style.top = '10px'
-  else if (v === 'bottom') style.bottom = '10px'
+  if (v === 'top') style.top = '4cqw'
+  else if (v === 'bottom') style.bottom = '4cqw'
   else style.top = '50%', style.transform = 'translateY(-50%)'
 
-  if (h === 'left') style.left = '10px'
-  else if (h === 'right') style.right = '10px'
+  if (h === 'left') style.left = '4cqw'
+  else if (h === 'right') style.right = '4cqw'
   else style.left = '50%', style.transform = (style.transform || '') + ' translateX(-50%)'
   
   return style
 }
 
-// --- CROPPING LOGIC ---
 const localCrop = ref({ ...(props.page.crop || { x: 10, y: 10, width: 80, height: 80 }) })
 
-// Keep local state in sync with props (important for "Apply All")
 watch(() => props.page.crop, (newCrop) => {
   if (newCrop) localCrop.value = { ...newCrop }
 }, { deep: true })
@@ -103,7 +101,7 @@ const startDrag = (e: MouseEvent, type: 'move' | 'nw' | 'ne' | 'sw' | 'se') => {
     <div 
       class="page-container" 
       :class="{ 'has-error': isDuplicate && activeTool === 'reorder' }"
-      :style="{ borderColor: (activeTool === 'split') ? getGroupColor(page.group) : (isDuplicate && activeTool === 'reorder' ? '#ef4444' : undefined) }"
+      :style="{ borderColor: (activeTool === 'split') ? getGroupColor(page.group) : (isDuplicate && activeTool === 'reorder' ? '#d13438' : undefined) }"
     >
       <div class="render-box">
         <div class="document-layer" :style="{ transform: `rotate(${page.rotation}deg)` }">
@@ -113,15 +111,15 @@ const startDrag = (e: MouseEvent, type: 'move' | 'nw' | 'ne' | 'sw' | 'se') => {
         <div class="overlay-layer">
           <template v-if="watermark?.enabled">
             <div v-if="watermark.repeat" class="watermark-grid">
-               <div v-for="n in 12" :key="n" class="wm-cell" :style="{ opacity: watermark.opacity, color: watermark.color, fontSize: (watermark.size/2.5) + 'px', transform: `rotate(${watermark.rotation}deg)` }">
+               <div v-for="n in 12" :key="n" class="wm-cell" :style="{ opacity: watermark.opacity, color: watermark.color, fontSize: (watermark.size / 15) + 'cqw', transform: `rotate(${watermark.rotation}deg)` }">
                   <template v-if="watermark.type === 'text'">{{ watermark.text }}</template>
-                  <img v-else-if="watermark.image" :src="watermark.image" class="wm-img" />
+                  <img v-else-if="watermark.image" :src="watermark.image" class="wm-img" :style="{ width: (watermark.size / 4) + 'cqw', maxWidth: '100%', height: 'auto' }" />
                </div>
             </div>
             <div v-else class="watermark-single" :style="getPreviewPosStyle(watermark.pos)">
-               <div :style="{ opacity: watermark.opacity, color: watermark.color, fontSize: watermark.size + 'px', transform: `rotate(${watermark.rotation}deg)` }">
+               <div :style="{ opacity: watermark.opacity, color: watermark.color, fontSize: (watermark.size / 6) + 'cqw', transform: `rotate(${watermark.rotation}deg)` }">
                   <template v-if="watermark.type === 'text'">{{ watermark.text }}</template>
-                  <img v-else-if="watermark.image" :src="watermark.image" class="wm-img" />
+                  <img v-else-if="watermark.image" :src="watermark.image" class="wm-img" :style="{ width: (watermark.size * 0.8) + 'cqw', maxWidth: '100%', height: 'auto' }" />
                </div>
             </div>
           </template>
@@ -130,7 +128,6 @@ const startDrag = (e: MouseEvent, type: 'move' | 'nw' | 'ne' | 'sw' | 'se') => {
             {{ numbering.index }}
           </div>
 
-          <!-- CROP OVERLAY -->
           <div v-if="activeTool === 'crop'" class="crop-overlay">
             <div 
               class="crop-box" 
@@ -141,89 +138,375 @@ const startDrag = (e: MouseEvent, type: 'move' | 'nw' | 'ne' | 'sw' | 'se') => {
               <div class="handle ne" @mousedown.stop="startDrag($event, 'ne')"></div>
               <div class="handle sw" @mousedown.stop="startDrag($event, 'sw')"></div>
               <div class="handle se" @mousedown.stop="startDrag($event, 'se')"></div>
-              <div class="crop-badge"><CropIcon :size="12" /> Crop Area</div>
+              <div class="crop-badge">Crop Area</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="page-badge-index">#{{ page.originalPageIndex + 1 }}</div>
+      <div class="page-index">#{{ page.originalPageIndex + 1 }}</div>
+
       <div v-if="activeTool === 'split' && page.group" class="group-badge" :style="{ background: getGroupColor(page.group) }">
-        Group #{{ page.group }}
+        PDF #{{ page.group }}
       </div>
     </div>
     
     <div class="page-actions">
       <template v-if="activeTool === 'reorder'">
-        <template v-if="!isIndividual"><span class="label">Pos:</span><input type="number" v-model.number="page.order" class="order-input" /></template>
+        <template v-if="!isIndividual">
+          <label class="action-label" :for="`pos-${page.originalPageIndex}`">Pos:</label>
+          <input
+            :id="`pos-${page.originalPageIndex}`"
+            type="text"
+            :value="String(page.order)"
+            @input="page.order = Number(($event.target as any).value)"
+            class="fluent-input order-field"
+          />
+        </template>
         <template v-else>
           <div class="move-inputs">
-            <input type="number" :value="targetPagePos" @input="$emit('update:targetPagePos', ($event.target as any).valueAsNumber)" placeholder="Pos" />
-            <button @click="$emit('move', 'before')" class="btn-action">BEFORE</button>
-            <button @click="$emit('move', 'after')" class="btn-action">AFTER</button>
+            <input
+              type="text"
+              :value="targetPagePos ? String(targetPagePos) : ''"
+              @input="$emit('update:targetPagePos', ($event.target as any).valueAsNumber)"
+              placeholder="Pos"
+              class="fluent-input pos-field"
+            />
+            <fluent-button appearance="outline" @click="$emit('move', 'before')" class="action-btn">Before</fluent-button>
+            <fluent-button appearance="outline" @click="$emit('move', 'after')" class="action-btn">After</fluent-button>
           </div>
         </template>
       </template>
+
       <template v-else-if="activeTool === 'rotate'">
-        <button @click="$emit('rotate', 'ccw')"><RotateCcw :size="16" /></button>
-        <button @click="$emit('rotate', 'cw')"><RotateCw :size="16" /></button>
+        <button class="icon-btn" @click="$emit('rotate', 'ccw')" title="Rotate left">
+          <RotateCcw :size="16" />
+        </button>
+        <button class="icon-btn" @click="$emit('rotate', 'cw')" title="Rotate right">
+          <RotateCw :size="16" />
+        </button>
       </template>
-      <template v-else-if="activeTool === 'merge'"><button @click="$emit('remove')" class="text-red"><Trash2 :size="16" /></button></template>
-      <template v-else-if="activeTool === 'ocr'"><span class="badge-status">OCR Active</span></template>
+
+      <template v-else-if="activeTool === 'merge'">
+        <button class="icon-btn icon-btn--danger" @click="$emit('remove')" title="Remove page">
+          <Trash2 :size="16" />
+        </button>
+      </template>
+
+      <template v-else-if="activeTool === 'ocr'">
+        <span class="status-chip">OCR Active</span>
+      </template>
+
       <template v-else-if="activeTool === 'split'">
-        <select v-model="page.group" class="group-select"><option v-for="n in 10" :key="n" :value="n">PDF #{{ n }}</option></select>
+        <select :value="String(page.group)" @change="page.group = Number(($event.target as any).value)" class="fluent-select group-select">
+          <option v-for="n in 10" :key="n" :value="String(n)">PDF #{{ n }}</option>
+        </select>
       </template>
+
       <template v-else-if="activeTool === 'crop'">
-        <button @click="localCrop = { x: 0, y: 0, width: 100, height: 100 }; $emit('update:crop', localCrop)" class="btn-action">RESET CROP</button>
+        <fluent-button appearance="outline" @click="localCrop = { x: 0, y: 0, width: 100, height: 100 }; $emit('update:crop', localCrop)" class="action-btn">
+          Reset Crop
+        </fluent-button>
       </template>
     </div>
   </div>
 </template>
 
 <style scoped>
-.page-item { display: flex; flex-direction: column; gap: 0.75rem; align-items: center; width: 100%; }
-.page-container { position: relative; background: #f1f5f9; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); aspect-ratio: 1 / 1.414; width: 100%; overflow: hidden; border: 2px solid #e2e8f0; transition: all 0.2s; }
-.page-container.has-error { border: 4px solid #ef4444 !important; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5) !important; z-index: 15; }
-.render-box { width: 100%; height: 100%; position: relative; overflow: hidden; }
-.document-layer { width: 100%; height: 100%; transition: transform 0.3s ease; display: flex; align-items: center; justify-content: center; }
-.document-layer img { width: 100%; height: 100%; object-fit: contain; background: white; }
-.overlay-layer { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
-.watermark-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; height: 100%; }
-.wm-cell { display: flex; align-items: center; justify-content: center; font-weight: 900; white-space: nowrap; text-align: center; }
-.wm-img { max-width: 80%; height: auto; }
-.watermark-single { display: flex; align-items: center; justify-content: center; font-weight: 900; }
-.numbering-preview { padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 800; min-width: 18px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.page-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
 
-.crop-overlay { position: absolute; inset: 0; z-index: 30; pointer-events: auto; }
-.crop-box { position: absolute; border: 2px solid #3b82f6; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); cursor: move; z-index: 35; }
-.handle { position: absolute; width: 14px; height: 14px; background: white; border: 2px solid #3b82f6; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-.handle.nw { top: -7px; left: -7px; cursor: nw-resize; }
-.handle.ne { top: -7px; right: -7px; cursor: ne-resize; }
-.handle.sw { bottom: -7px; left: -7px; cursor: sw-resize; }
-.handle.se { bottom: -7px; right: -7px; cursor: se-resize; }
-.crop-badge { position: absolute; top: 4px; left: 4px; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; display: flex; align-items: center; gap: 4px; pointer-events: none; }
+.page-container {
+  position: relative;
+  background: var(--colorNeutralBackgroundCard);
+  border-radius: var(--borderRadiusMedium);
+  box-shadow: var(--shadow4);
+  aspect-ratio: 1 / 1.414;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--colorNeutralStroke1);
+  transition: border-color 0.15s;
+}
 
-.page-badge-index { position: absolute; top: 8px; left: 8px; background: #3b82f6; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; z-index: 20; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-.group-badge { position: absolute; top: 8px; right: 8px; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 800; z-index: 20; }
-.page-actions { 
-  display: flex; 
-  gap: 0.5rem; 
-  background: white; 
-  padding: 0.4rem 0.8rem; 
-  border-radius: 2rem; 
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-  align-items: center; 
-  border: 1px solid #f1f5f9; 
-  flex-wrap: wrap;
+.page-container.has-error {
+  border: 2px solid #d13438 !important;
+  box-shadow: 0 0 8px rgba(209, 52, 56, 0.25) !important;
+}
+
+.render-box {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.document-layer {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
   justify-content: center;
 }
-.page-actions button { background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 0.4rem; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-.page-actions button:hover { background: #eff6ff; color: #3b82f6; border-color: #3b82f6; }
-.page-actions button.text-red { color: #ef4444; }
-.page-actions button.text-red:hover { background: #fee2e2; border-color: #f87171; color: #ef4444; }
-.order-input { width: 40px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center; font-weight: 800; font-size: 0.8rem; }
-.group-select { border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.7rem; font-weight: 700; outline: none; padding: 2px; }
-.btn-action { background: #eff6ff; color: #3b82f6; border: none; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 0.65rem; cursor: pointer; }
-.individual-view { max-width: 450px; margin: 0 auto; }
-.badge-status { font-size: 0.65rem; font-weight: 800; color: #3b82f6; background: #eff6ff; padding: 0.15rem 0.5rem; border-radius: 1rem; }
+
+.document-layer img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: white;
+}
+
+.overlay-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.watermark-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  height: 100%;
+}
+
+.wm-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--fontWeightBold);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.wm-img {
+  display: block;
+}
+
+.watermark-single {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--fontWeightBold);
+}
+
+.numbering-preview {
+  padding: 1cqw 2cqw;
+  border-radius: var(--borderRadiusSmall);
+  font-size: 2.2cqw;
+  font-weight: var(--fontWeightBold);
+  min-width: 3.5cqw;
+  text-align: center;
+}
+
+/* ── Crop ── */
+.crop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.crop-box {
+  position: absolute;
+  border: 2px solid var(--colorBrandForeground1);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  cursor: move;
+  z-index: 35;
+}
+
+.handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border: 2px solid var(--colorBrandForeground1);
+  border-radius: var(--borderRadiusSmall);
+  box-shadow: var(--shadow4);
+}
+
+.handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+.handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+.handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+.handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+
+.crop-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: var(--colorBrandForeground1);
+  color: white;
+  padding: 2px 5px;
+  border-radius: var(--borderRadiusSmall);
+  font-size: 9px;
+  font-weight: var(--fontWeightBold);
+  pointer-events: none;
+}
+
+/* ── Page index — square chip ── */
+.page-index {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: var(--colorBrandForeground1);
+  color: white;
+  min-width: 22px;
+  height: 18px;
+  border-radius: var(--borderRadiusSmall);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: var(--fontWeightBold);
+  z-index: 20;
+  white-space: nowrap;
+}
+
+.group-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  color: white;
+  padding: 2px 5px;
+  border-radius: var(--borderRadiusSmall);
+  font-size: 9px;
+  font-weight: var(--fontWeightBold);
+  z-index: 20;
+}
+
+/* ── Actions bar — flat rectangle ── */
+.page-actions {
+  display: flex;
+  gap: 4px;
+  background: var(--colorNeutralBackground3);
+  padding: 5px 8px;
+  border-radius: var(--borderRadiusMedium);
+  border: 1px solid var(--colorNeutralStroke1);
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Fluent-style native input & select */
+.fluent-input,
+.fluent-select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
+  background: var(--colorNeutralBackground1);
+  color: var(--colorNeutralForeground1);
+  font-family: inherit;
+  font-size: var(--fontSizeBase200);
+  outline: none;
+  transition: border-color 0.1s;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.fluent-select {
+  padding-right: 24px;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23666666' height='14' viewBox='0 0 24 24' width='14' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  cursor: pointer;
+}
+
+.fluent-input:focus,
+.fluent-select:focus {
+  border-color: var(--colorBrandStroke1);
+  box-shadow: 0 0 0 1px var(--colorBrandStroke1);
+}
+
+/* Icon buttons */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--borderRadiusMedium);
+  cursor: pointer;
+  color: var(--colorNeutralForeground2);
+  transition: background 0.1s, color 0.1s;
+}
+
+.icon-btn:hover {
+  background: var(--colorNeutralBackground1Hover);
+  color: var(--colorNeutralForeground1);
+}
+
+.icon-btn--danger {
+  color: var(--colorPaletteRedForeground1);
+}
+
+.icon-btn--danger:hover {
+  background: var(--colorPaletteRedBackground1);
+}
+
+.action-label {
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorNeutralForeground2);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  line-height: 28px;
+}
+
+.order-field {
+  width: 52px;
+}
+
+.pos-field {
+  width: 56px;
+}
+
+.move-inputs {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.action-btn {
+  --button-height: 28px;
+  --button-padding-end: var(--spacingHorizontalS);
+  --button-padding-start: var(--spacingHorizontalS);
+  font-size: var(--fontSizeBase100);
+}
+
+.group-select {
+  width: 90px;
+}
+
+/* OCR status label */
+.status-chip {
+  font-size: var(--fontSizeBase100);
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorBrandForeground1);
+  letter-spacing: 0.02em;
+}
+
+.individual-view {
+  max-width: 450px;
+  margin: 0 auto;
+}
 </style>
